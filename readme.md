@@ -1,7 +1,7 @@
-- Add OTP-based login with Redis storage and rate limiting
-- Implement OTP verification and auto user creation
-- Generate JWT with minimal payload (id, email)
-- Add protected profile route (/me)
-- Implement updateName endpoint with token refresh
-- Add getAllUsers and getUser endpoints
-- Integrate RabbitMQ publisher for OTP email delivery
+
+- Add createNewChat with duplicate prevention
+- Implement getAllChats with unseen message count
+- Add sendMessage supporting text and image messages
+- Implement getMessagesByChat with seen status update
+- Integrate User Service via Axios for participant data
+- Add chat membership validation and authorization checks
