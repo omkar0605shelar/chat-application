@@ -2,12 +2,12 @@ import type { Request, Response, NextFunction } from 'express';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
-import type { IUSer } from '../model/User.js';
+import type { IUser } from '../model/User.js';
 
 dotenv.config();
 
 export interface AuthenticatedRequest extends Request{
-  user?: IUSer | null;
+  user?: IUser | null;
 }
 
 export const isAuth = async(req: AuthenticatedRequest, res: Response, next: NextFunction):Promise<void> => {
