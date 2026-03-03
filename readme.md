@@ -1,4 +1,3 @@
-
 - Add createNewChat with duplicate prevention
 - Implement getAllChats with unseen message count
 - Add sendMessage supporting text and image messages

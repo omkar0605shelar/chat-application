@@ -1,0 +1,39 @@
+import React from 'react';
+import type { Message } from '../types';
+import { useAuthStore } from '../context/useAuthStore';
+import { Check, CheckCheck } from 'lucide-react';
+
+interface MessageBubbleProps {
+    message: Message;
+}
+
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+    const currentUser = useAuthStore((state) => state.user);
+    const isMe = message.sender === currentUser?._id;
+
+    return (
+        <div className={`flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`}>
+            <div
+                className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm relative ${isMe
+                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-tr-none'
+                    : 'bg-white/60 backdrop-blur-sm text-gray-800 rounded-tl-none border border-white/40'
+                    }`}
+            >
+                {message.messageType === 'image' && message.image && (
+                    <img src={message.image.url} alt="Shared" className="rounded-lg mb-2 max-h-60 w-full object-cover" />
+                )}
+                <p className="text-sm md:text-base leading-relaxed">{message.text}</p>
+                <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
+                    <span className="text-[10px]">
+                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {isMe && (
+                        message.seen ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default MessageBubble;

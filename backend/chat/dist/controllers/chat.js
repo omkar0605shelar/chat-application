@@ -2,6 +2,7 @@ import axios from "axios";
 import TryCatch from "../config/TryCatch.js";
 import { Chat } from "../models/Chat.js";
 import { Messages } from "../models/Message.js";
+import { io, userSocketMap } from "../index.js";
 export const createNewChat = TryCatch(async (req, res) => {
     const userId = req.user?._id;
     const { otherUserId } = req.body;
@@ -150,6 +151,11 @@ export const sendMessage = TryCatch(async (req, res) => {
         updatedAt: new Date(),
     }, { new: true });
     //emit to sockets
+    const receiverId = otherUserId.toString();
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newMessage", savedMessage);
+    }
     res.status(201).json({
         message: savedMessage,
         sender: senderId
@@ -210,6 +216,10 @@ export const getMessagesByChat = TryCatch(async (req, res) => {
             return;
         }
         //socket work
+        const receiverSocketId = userSocketMap[userId.toString()];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("messagesSeen", { chatId, seenAt: new Date() });
+        }
         res.json({
             messages,
             user: data,
