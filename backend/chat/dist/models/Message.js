@@ -32,5 +32,6 @@ const schema = new Schema({
 }, {
     timestamps: true
 });
+schema.index({ chatId: 1, sender: 1, seen: 1 });
 export const Messages = mongoose.model("Messages", schema);
 //# sourceMappingURL=Message.js.map

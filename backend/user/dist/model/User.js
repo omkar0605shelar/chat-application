@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 const schema = new Schema({
     name: {
         type: String,
@@ -8,7 +8,11 @@ const schema = new Schema({
         type: String,
         required: true,
         unique: true
-    }
+    },
+    friends: [{
+            type: Schema.Types.ObjectId,
+            ref: "User"
+        }]
 }, {
     timestamps: true
 });

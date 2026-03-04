@@ -10,10 +10,11 @@ interface SidebarProps {
     onSelectChat: (chat: ChatWithUser) => void;
     selectedChatId?: string;
     onlineUsers: string[];
+    chats: ChatWithUser[];
+    onRefreshChats: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, selectedChatId, onlineUsers }) => {
-    const [chats, setChats] = useState<ChatWithUser[]>([]);
+const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, selectedChatId, onlineUsers, chats, onRefreshChats }) => {
     const [users, setUsers] = useState<User[]>([]);
     const [activeTab, setActiveTab] = useState<'chats' | 'users'>('chats');
     const [search, setSearch] = useState('');
@@ -21,19 +22,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, selectedChatId, onlineU
     const currentUser = useAuthStore((state) => state.user);
 
     useEffect(() => {
-        fetchData();
+        fetchUsers();
     }, []);
 
-    const fetchData = async () => {
+    const fetchUsers = async () => {
         try {
-            const [chatsRes, usersRes] = await Promise.all([
-                chatService.getChats(),
-                authService.getAllUsers(),
-            ]);
-            setChats(chatsRes.data.chats);
+            const usersRes = await authService.getAllUsers();
             setUsers(usersRes.data.users.filter((u: User) => u._id !== currentUser?._id));
         } catch (err) {
-            console.error('Error fetching sidebar data', err);
+            console.error('Error fetching users', err);
         }
     };
 
@@ -42,12 +39,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectChat, selectedChatId, onlineU
 
     const handleCreateChat = async (userId: string) => {
         try {
-            const res = await chatService.createChat(userId);
-            await fetchData();
+            await chatService.createChat(userId);
+            onRefreshChats();
             setActiveTab('chats');
-            // Find and select the new chat
-            const existingChat = chats.find(c => c.chat._id === res.data.chatId);
-            if (existingChat) onSelectChat(existingChat);
+            // Selection will be handled by the parent when chats are refreshed
         } catch (err) {
             console.error('Error creating chat', err);
         }

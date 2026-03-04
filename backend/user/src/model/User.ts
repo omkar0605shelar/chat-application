@@ -1,8 +1,9 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface IUser extends Document {
   name: string;
   email: string;
+  friends: Types.ObjectId[];
 }
 
 const schema: Schema<IUser> = new Schema({
@@ -11,10 +12,14 @@ const schema: Schema<IUser> = new Schema({
     required: true,
   },
   email: {
-    type: String, 
+    type: String,
     required: true,
     unique: true
-  }
+  },
+  friends: [{
+    type: Schema.Types.ObjectId,
+    ref: "User"
+  }]
 }, {
   timestamps: true
 });

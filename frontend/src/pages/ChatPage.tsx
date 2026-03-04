@@ -8,11 +8,25 @@ import { chatService } from '../services/chatService';
 import { MessageCircle } from 'lucide-react';
 
 const ChatPage: React.FC = () => {
+    const [chats, setChats] = useState<ChatWithUser[]>([]);
     const [selectedChat, setSelectedChat] = useState<ChatWithUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const user = useAuthStore((state) => state.user);
+
+    const fetchChats = async () => {
+        try {
+            const res = await chatService.getChats();
+            setChats(res.data.chats);
+        } catch (err) {
+            console.error('Error fetching chats', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchChats();
+    }, []);
 
     useEffect(() => {
         if (user?._id) {
@@ -25,8 +39,30 @@ const ChatPage: React.FC = () => {
             socket.on('newMessage', (message: Message) => {
                 if (selectedChat?.chat._id === message.chatId) {
                     setMessages((prev) => [...prev, message]);
+                    // If we are already in the chat, mark it as read immediately
+                    chatService.markAsRead(message.chatId);
+                } else {
+                    // Update unseen count in sidebar
+                    setChats((prev) =>
+                        prev.map((c) => {
+                            if (c.chat._id === message.chatId) {
+                                return {
+                                    ...c,
+                                    chat: {
+                                        ...c.chat,
+                                        unseenCount: c.chat.unseenCount + 1,
+                                        latestMessage: {
+                                            text: message.text,
+                                            sender: message.sender,
+                                        },
+                                        updatedAt: new Date().toISOString(),
+                                    },
+                                };
+                            }
+                            return c;
+                        }).sort((a, b) => new Date(b.chat.updatedAt).getTime() - new Date(a.chat.updatedAt).getTime())
+                    );
                 }
-                // Refresh sidebar or chats list here if needed
             });
 
             socket.on('messagesSeen', ({ chatId, seenAt }: { chatId: string, seenAt: string }) => {
@@ -46,8 +82,6 @@ const ChatPage: React.FC = () => {
                     setIsTyping(typing);
                 }
             });
-
-            // Handle other socket events like typing...
         }
 
         return () => {
@@ -55,11 +89,31 @@ const ChatPage: React.FC = () => {
         };
     }, [user, selectedChat]);
 
+    const handleSelectChat = async (chatWithUser: ChatWithUser) => {
+        setSelectedChat(chatWithUser);
+
+        // Mark as read immediately in UI
+        setChats((prev) =>
+            prev.map((c) =>
+                c.chat._id === chatWithUser.chat._id
+                    ? { ...c, chat: { ...c.chat, unseenCount: 0 } }
+                    : c
+            )
+        );
+
+        // Call API
+        try {
+            await chatService.markAsRead(chatWithUser.chat._id);
+        } catch (err) {
+            console.error('Error marking as read', err);
+        }
+    };
+
     useEffect(() => {
         if (selectedChat) {
             fetchMessages(selectedChat.chat._id);
         }
-    }, [selectedChat]);
+    }, [selectedChat?.chat._id]);
 
     const fetchMessages = async (chatId: string) => {
         try {
@@ -74,7 +128,27 @@ const ChatPage: React.FC = () => {
         if (!selectedChat) return;
         try {
             const res = await chatService.sendMessage(selectedChat.chat._id, text, image);
-            setMessages((prev) => [...prev, res.data.message]);
+            const newMessage = res.data.message;
+            setMessages((prev) => [...prev, newMessage]);
+
+            // Update latest message in sidebar
+            setChats((prev) =>
+                prev.map((c) =>
+                    c.chat._id === selectedChat.chat._id
+                        ? {
+                            ...c,
+                            chat: {
+                                ...c.chat,
+                                latestMessage: {
+                                    text: newMessage.text,
+                                    sender: newMessage.sender,
+                                },
+                                updatedAt: new Date().toISOString(),
+                            },
+                        }
+                        : c
+                ).sort((a, b) => new Date(b.chat.updatedAt).getTime() - new Date(a.chat.updatedAt).getTime())
+            );
         } catch (err) {
             console.error('Error sending message', err);
         }
@@ -84,8 +158,10 @@ const ChatPage: React.FC = () => {
         <div className="flex w-full h-full">
             <Sidebar
                 onlineUsers={onlineUsers}
-                onSelectChat={setSelectedChat}
+                onSelectChat={handleSelectChat}
                 selectedChatId={selectedChat?.chat._id}
+                chats={chats}
+                onRefreshChats={fetchChats}
             />
             {selectedChat ? (
                 <ChatWindow

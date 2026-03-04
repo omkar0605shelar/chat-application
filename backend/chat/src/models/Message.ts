@@ -1,6 +1,6 @@
-import mongoose, {Document, Schema, Types} from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
 
-export interface IMessage extends Document{
+export interface IMessage extends Document {
   chatId: Types.ObjectId;
   sender: string,
   text?: string,
@@ -41,12 +41,14 @@ const schema = new Schema<IMessage>({
     type: Boolean,
     default: false
   },
-  seenAt:{
+  seenAt: {
     type: Date,
     default: null
   }
-},{
+}, {
   timestamps: true
 })
+
+schema.index({ chatId: 1, sender: 1, seen: 1 });
 
 export const Messages = mongoose.model<IMessage>("Messages", schema);

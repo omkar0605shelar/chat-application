@@ -4,6 +4,10 @@ const schema = new Schema({
             type: String,
             required: true
         }],
+    isGroup: {
+        type: Boolean,
+        default: false
+    },
     latestMessage: {
         text: String,
         sender: String

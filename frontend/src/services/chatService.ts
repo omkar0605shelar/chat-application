@@ -33,6 +33,9 @@ export const chatService = {
     createChat: async (otherUserId: string) => {
         return chatApi.post('/chat/new', { otherUserId });
     },
+    markAsRead: async (chatId: string) => {
+        return chatApi.patch(`/message/mark-as-read/${chatId}`);
+    },
 };
 
 export default chatApi;

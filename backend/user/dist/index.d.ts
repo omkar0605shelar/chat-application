@@ -1,3 +1,5 @@
+import { Server } from 'socket.io';
+declare const io: Server<import("socket.io").DefaultEventsMap, import("socket.io").DefaultEventsMap, import("socket.io").DefaultEventsMap, any>;
 export declare const redisClient: import("@redis/client").RedisClientType<{
     json: {
         ARRAPPEND: {
@@ -2312,4 +2314,8 @@ export declare const redisClient: import("@redis/client").RedisClientType<{
         };
     };
 } & import("redis").RedisModules, import("redis").RedisFunctions, import("redis").RedisScripts, import("redis").RespVersions, import("redis").TypeMapping>;
+export declare const userSocketMap: {
+    [key: string]: string;
+};
+export { io };
 //# sourceMappingURL=index.d.ts.map

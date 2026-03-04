@@ -194,7 +194,7 @@ export const sendMessage = TryCatch(async (req: AuthenticatedRequest, res) => {
       sender: senderId
     },
     updatedAt: new Date(),
-  }, { new: true });
+  }, { returnDocument: 'after' });
 
   //emit to sockets
   const receiverId = otherUserId.toString();
@@ -209,6 +209,43 @@ export const sendMessage = TryCatch(async (req: AuthenticatedRequest, res) => {
     sender: senderId
   })
 })
+
+export const markAsRead = TryCatch(async (req: AuthenticatedRequest, res) => {
+  const userId = req.user?._id;
+  const { chatId } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized." });
+    return;
+  }
+
+  const chat = await Chat.findById(chatId);
+  if (!chat) {
+    res.status(404).json({ message: "Chat not found." });
+    return;
+  }
+
+  const isUserInChat = chat.users.includes(userId.toString());
+  if (!isUserInChat) {
+    res.status(403).json({ message: "Access denied." });
+    return;
+  }
+
+  await Messages.updateMany(
+    { chatId, sender: { $ne: userId }, seen: false },
+    { seen: true, seenAt: new Date() }
+  );
+
+  const otherUserId = chat.users.find(id => id !== userId.toString());
+  if (otherUserId) {
+    const otherUserSocketId = userSocketMap[otherUserId];
+    if (otherUserSocketId) {
+      io.to(otherUserSocketId).emit("messagesSeen", { chatId, seenAt: new Date() });
+    }
+  }
+
+  res.json({ message: "Messages marked as read" });
+});
 
 export const getMessagesByChat = TryCatch(async (req: AuthenticatedRequest, res) => {
   const userId = req.user?._id;
@@ -286,9 +323,11 @@ export const getMessagesByChat = TryCatch(async (req: AuthenticatedRequest, res)
     }
 
     //socket work
-    const receiverSocketId = userSocketMap[userId.toString()];
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("messagesSeen", { chatId, seenAt: new Date() });
+    if (otherUserId) {
+      const otherUserSocketId = userSocketMap[otherUserId.toString()];
+      if (otherUserSocketId) {
+        io.to(otherUserSocketId).emit("messagesSeen", { chatId, seenAt: new Date() });
+      }
     }
 
     res.json({

@@ -9,8 +9,8 @@ const storage = new CloudinaryStorage({
     folder: "chat-images",
     allowed_formats: ["jpg", "jpeg", "png", "webp", 'gif'],
     transformation: [
-      {width: 800, height: 600, crop: "limit"},
-      {quality: "auto"}
+      { width: 800, height: 600, crop: "limit" },
+      { quality: "auto" }
     ]
   } as any
 })
@@ -21,10 +21,10 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-    if(file.mimetype.startsWith("/image/")){
+    if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     }
-    else{
+    else {
       cb(new Error("Only image allowed."));
     }
   }

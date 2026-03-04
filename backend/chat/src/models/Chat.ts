@@ -1,7 +1,8 @@
-import mongoose, {Document, Schema} from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IChat extends Document {
   users: string[],
+  isGroup: boolean,
   latestMessage: {
     text: string,
     sender: string,
@@ -15,11 +16,15 @@ const schema: Schema<IChat> = new Schema({
     type: String,
     required: true
   }],
+  isGroup: {
+    type: Boolean,
+    default: false
+  },
   latestMessage: {
     text: String,
     sender: String
   }
-},{
+}, {
   timestamps: true
 })
 
