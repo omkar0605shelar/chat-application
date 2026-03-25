@@ -6,5 +6,29 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
+export const uploadToCloudinary = (fileBuffer) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream({
+            folder: "chat-images",
+            transformation: [
+                { width: 800, height: 600, crop: "limit" },
+                { quality: "auto" }
+            ]
+        }, (error, result) => {
+            if (error) {
+                console.error("Cloudinary Upload Error:", error);
+                return reject(new Error("Failed to upload image to Cloudinary"));
+            }
+            if (!result) {
+                return reject(new Error("Cloudinary upload returned no result"));
+            }
+            resolve({
+                url: result.secure_url,
+                publicId: result.public_id
+            });
+        });
+        uploadStream.end(fileBuffer);
+    });
+};
 export default cloudinary;
 //# sourceMappingURL=cloudinary.js.map

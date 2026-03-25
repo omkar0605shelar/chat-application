@@ -98,6 +98,8 @@ export const getAllChats = TryCatch(async (req: AuthenticatedRequest, res) => {
   })
 })
 
+import { uploadToCloudinary } from "../config/cloudinary.js";
+
 export const sendMessage = TryCatch(async (req: AuthenticatedRequest, res) => {
   const senderId = req.user?._id;
   const { chatId, text } = req.body;
@@ -106,87 +108,86 @@ export const sendMessage = TryCatch(async (req: AuthenticatedRequest, res) => {
   if (!senderId) {
     res.status(401).json({
       message: "Unauthorized."
-    })
-
+    });
     return;
   }
 
   if (!chatId) {
     res.status(400).json({
       message: "ChatId required."
-    })
+    });
     return;
   }
 
   if (!text && !imageFile) {
     res.status(400).json({
       message: "Either text or image is required."
-    })
-
+    });
     return;
   }
 
   const chat = await Chat.findById(chatId);
-
   if (!chat) {
     res.status(404).json({
       message: "Chat not found."
     });
-
     return;
   }
 
   const isUserInChat = chat.users.some(
     (userId) => userId.toString() === senderId.toString()
-  )
+  );
 
   if (!isUserInChat) {
     res.status(403).json({
-      message: "you are not a participant of these chat."
-    })
-
+      message: "You are not a participant of this chat."
+    });
     return;
   }
 
   const otherUserId = chat.users.find(
     (userId) => userId.toString() !== senderId.toString()
-  )
+  );
 
   if (!otherUserId) {
-    res.status(401).json({
-      message: "No other user."
-    })
-
+    res.status(400).json({
+      message: "No other user found in this chat."
+    });
     return;
   }
-
-  //socket setup
 
   let messageData: any = {
     chatId: chatId,
     sender: senderId,
     seen: false,
-    seenAt: undefined,
-  }
+  };
 
   if (imageFile) {
-    messageData.image = {
-      url: imageFile.path,
-      publicId: imageFile.filename
-    };
-
-    messageData.messageType = "image";
-    messageData.text = text || "";
-  }
-  else {
+    try {
+      const uploadResult = await uploadToCloudinary(imageFile.buffer);
+      messageData.image = {
+        url: uploadResult.url,
+        publicId: uploadResult.publicId
+      };
+      messageData.messageType = "image";
+      messageData.text = text || "";
+    } catch (uploadError: any) {
+      console.error("Image Upload Failed:", uploadError);
+      res.status(500).json({
+        message: "Failed to upload image. Please try again.",
+        error: uploadError.message
+      });
+      return;
+    }
+  } else {
     messageData.text = text;
     messageData.messageType = "text";
   }
-  const message = new Messages(messageData);
 
+  const message = new Messages(messageData);
   const savedMessage = await message.save();
 
-  const latestMessageText = imageFile ? "📷 Image" : text
+  const latestMessageText = imageFile ? "📷 Image" : text;
 
   await Chat.findByIdAndUpdate(chatId, {
     latestMessage: {
@@ -194,9 +195,9 @@ export const sendMessage = TryCatch(async (req: AuthenticatedRequest, res) => {
       sender: senderId
     },
     updatedAt: new Date(),
-  }, { returnDocument: 'after' });
+  }, { new: true });
 
-  //emit to sockets
+  // emit to sockets
   const receiverId = otherUserId.toString();
   const receiverSocketId = userSocketMap[receiverId];
 
@@ -207,8 +208,8 @@ export const sendMessage = TryCatch(async (req: AuthenticatedRequest, res) => {
   res.status(201).json({
     message: savedMessage,
     sender: senderId
-  })
-})
+  });
+});
 
 export const markAsRead = TryCatch(async (req: AuthenticatedRequest, res) => {
   const userId = req.user?._id;

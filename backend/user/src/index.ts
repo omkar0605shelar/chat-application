@@ -24,7 +24,7 @@ const io = new Server(httpServer, {
 const port = process.env.PORT || 5000;
 
 export const redisClient = createClient({
-  url: process.env.REDIS_URL || 'rediss://default:AeCHAAIncDIwMTgxMDI4NmQzMzA0ZWYzODMzYzNkMDkxZmIwMThhNnAyNTc0Nzk@charmed-flounder-57479.upstash.io:6379'
+  url: process.env.REDIS_URL
 })
 
 redisClient.connect()

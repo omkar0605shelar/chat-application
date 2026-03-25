@@ -78,6 +78,7 @@ export const getAllChats = TryCatch(async (req, res) => {
         chats: chatWithUserData
     });
 });
+import { uploadToCloudinary } from "../config/cloudinary.js";
 export const sendMessage = TryCatch(async (req, res) => {
     const senderId = req.user?._id;
     const { chatId, text } = req.body;
@@ -110,31 +111,40 @@ export const sendMessage = TryCatch(async (req, res) => {
     const isUserInChat = chat.users.some((userId) => userId.toString() === senderId.toString());
     if (!isUserInChat) {
         res.status(403).json({
-            message: "you are not a participant of these chat."
+            message: "You are not a participant of this chat."
         });
         return;
     }
     const otherUserId = chat.users.find((userId) => userId.toString() !== senderId.toString());
     if (!otherUserId) {
-        res.status(401).json({
-            message: "No other user."
+        res.status(400).json({
+            message: "No other user found in this chat."
         });
         return;
     }
-    //socket setup
     let messageData = {
         chatId: chatId,
         sender: senderId,
         seen: false,
-        seenAt: undefined,
     };
     if (imageFile) {
-        messageData.image = {
-            url: imageFile.path,
-            publicId: imageFile.filename
-        };
-        messageData.messageType = "image";
-        messageData.text = text || "";
+        try {
+            const uploadResult = await uploadToCloudinary(imageFile.buffer);
+            messageData.image = {
+                url: uploadResult.url,
+                publicId: uploadResult.publicId
+            };
+            messageData.messageType = "image";
+            messageData.text = text || "";
+        }
+        catch (uploadError) {
+            console.error("Image Upload Failed:", uploadError);
+            res.status(500).json({
+                message: "Failed to upload image. Please try again.",
+                error: uploadError.message
+            });
+            return;
+        }
     }
     else {
         messageData.text = text;
@@ -149,8 +159,8 @@ export const sendMessage = TryCatch(async (req, res) => {
             sender: senderId
         },
         updatedAt: new Date(),
-    }, { returnDocument: 'after' });
-    //emit to sockets
+    }, { new: true });
+    // emit to sockets
     const receiverId = otherUserId.toString();
     const receiverSocketId = userSocketMap[receiverId];
     if (receiverSocketId) {
