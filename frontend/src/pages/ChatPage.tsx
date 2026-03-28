@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import ChatWindow from '../components/ChatWindow';
+import VideoCallOverlay from '../components/VideoCallOverlay';
 import { useAuthStore } from '../context/useAuthStore';
-import { connectSocket, disconnectSocket } from '../services/socket';
+import { useCallStore } from '../store/useCallStore';
+import { connectSocket, disconnectSocket, getSocket } from '../services/socket';
 import type { ChatWithUser, Message } from '../types';
 import { chatService } from '../services/chatService';
+import { callService } from '../services/callService';
 import { MessageCircle } from 'lucide-react';
+import Peer from 'simple-peer';
 
 const ChatPage: React.FC = () => {
     const [chats, setChats] = useState<ChatWithUser[]>([]);
@@ -14,6 +18,7 @@ const ChatPage: React.FC = () => {
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const user = useAuthStore((state) => state.user);
+    const { setCallState, setLocalStream, setRemoteStream, setPeer, resetCall, peer: currentPeer } = useCallStore();
 
     const fetchChats = async () => {
         try {
@@ -81,6 +86,26 @@ const ChatPage: React.FC = () => {
                 if (selectedChat?.chat._id === chatId) {
                     setIsTyping(typing);
                 }
+            });
+
+            // Video Call Listeners
+            socket.on('call:offer', ({ from, signal, name }: { from: string, signal: Peer.SignalData, name: string }) => {
+                setCallState({
+                    status: 'receiving',
+                    peerId: from,
+                    peerName: name,
+                    signal
+                });
+            });
+
+            socket.on('call:answer', ({ signal }: { signal: Peer.SignalData }) => {
+                if (currentPeer && (currentPeer as Peer.Instance).signal) {
+                    (currentPeer as Peer.Instance).signal(signal);
+                }
+            });
+
+            socket.on('call:end', () => {
+                resetCall();
             });
         }
 
@@ -154,6 +179,68 @@ const ChatPage: React.FC = () => {
         }
     };
 
+    const handleStartCall = async (isVideo: boolean) => {
+        if (!selectedChat || !user) return;
+        const socket = getSocket();
+        if (!socket) return;
+
+        try {
+            const stream = await callService.getUserMedia(isVideo, true);
+            setLocalStream(stream);
+            setCallState({
+                status: 'calling',
+                peerId: selectedChat.user._id,
+                peerName: selectedChat.user.name,
+                isVideoOn: isVideo
+            });
+
+            const peer = callService.initiateCall(
+                socket,
+                selectedChat.user._id,
+                stream,
+                () => {
+                    // Signal is sent by the service
+                },
+                (remoteStream) => {
+                    setRemoteStream(remoteStream);
+                    setCallState({ status: 'in-call' });
+                },
+                () => resetCall()
+            );
+
+            setPeer(peer);
+        } catch (err) {
+            console.error('Error starting call', err);
+        }
+    };
+
+    const handleAnswerCall = async () => {
+        const { peerId, signal: incomingSignal } = useCallStore.getState();
+        const socket = getSocket();
+        if (!socket || !peerId || !incomingSignal) return;
+
+        try {
+            const stream = await callService.getUserMedia(true, true);
+            setLocalStream(stream);
+
+            const peer = callService.answerCall(
+                socket,
+                peerId,
+                incomingSignal as Peer.SignalData,
+                stream,
+                (remoteStream) => {
+                    setRemoteStream(remoteStream);
+                    setCallState({ status: 'in-call' });
+                },
+                () => resetCall()
+            );
+
+            setPeer(peer);
+        } catch (err) {
+            console.error('Error answering call', err);
+        }
+    };
+
     return (
         <div className="flex w-full h-full">
             <Sidebar
@@ -168,6 +255,7 @@ const ChatPage: React.FC = () => {
                     selectedChat={selectedChat}
                     messages={messages}
                     onSendMessage={handleSendMessage}
+                    onStartCall={handleStartCall}
                     isTyping={isTyping}
                 />
             ) : (
@@ -181,6 +269,7 @@ const ChatPage: React.FC = () => {
                     </p>
                 </div>
             )}
+            <VideoCallOverlay onAnswer={handleAnswerCall} />
         </div>
     );
 };

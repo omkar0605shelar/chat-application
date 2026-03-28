@@ -14,9 +14,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     return (
         <div className={`flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`}>
             <div
-                className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm relative ${isMe
-                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-tr-none'
-                    : 'bg-white/60 backdrop-blur-sm text-gray-800 rounded-tl-none border border-white/40'
+                className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-lg relative ${isMe
+                    ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none shadow-blue-500/20'
+                    : 'bg-white/10 backdrop-blur-xl text-gray-100 rounded-tl-none border border-white/10'
                     }`}
             >
                 {message.messageType === 'image' && message.image && (

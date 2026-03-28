@@ -1,1 +1,532 @@
 @import "tailwindcss";
+
+/* ─── Design Tokens ─────────────────────────────────────── */
+:root {
+  --primary: #6366f1;
+  --primary-light: #818cf8;
+  --primary-dark: #4f46e5;
+  --secondary: #8b5cf6;
+  --accent: #06b6d4;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --bg: #0f0f23;
+  --bg-card: rgba(255, 255, 255, 0.06);
+  --bg-card-hover: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 4px 24px rgba(99, 102, 241, 0.3);
+  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.2);
+}
+
+/* ─── Global Reset ──────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* ─── Custom Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ─── Glassmorphism Utility ─────────────────────────────── */
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--border-strong);
+}
+
+/* ─── Gradient Text ─────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-cyan {
+  background: linear-gradient(135deg, #06b6d4, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Gradient Backgrounds ──────────────────────────────── */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1040 50%, #0d1f3c 100%);
+}
+
+/* ─── Animated Blob ─────────────────────────────────────── */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+@keyframes blob2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 30px) scale(0.9); }
+  66% { transform: translate(40px, -20px) scale(1.1); }
+}
+
+.animate-blob {
+  animation: blob 8s ease-in-out infinite;
+}
+.animate-blob2 {
+  animation: blob2 10s ease-in-out infinite;
+}
+
+/* ─── Typing Dots ───────────────────────────────────────── */
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.typing-dot {
+  animation: typing-dot 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ─── Message Bubble Tail ───────────────────────────────── */
+.bubble-sent::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #6366f1;
+  border-top: 8px solid transparent;
+}
+
+.bubble-received::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-right: 8px solid rgba(255, 255, 255, 0.08);
+  border-top: 8px solid transparent;
+}
+
+/* ─── Ring / Pulse Animation ────────────────────────────── */
+@keyframes ring {
+  0%, 100% { transform: rotate(-10deg); }
+  25% { transform: rotate(10deg); }
+  50% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+.animate-ring {
+  animation: ring 0.6s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* ─── Slide-up animation ────────────────────────────────── */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* ─── Fade-in ───────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* ─── Input focus ring ──────────────────────────────────── */
+.input-field {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* ─── Button base ───────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: var(--shadow-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.45);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-ghost:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+/* ─── Sidebar icon button ───────────────────────────────── */
+.icon-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  position: relative;
+}
+.icon-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.icon-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-light);
+}
+
+/* ─── Chat list item ────────────────────────────────────── */
+.chat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+.chat-item:hover {
+  background: var(--bg-card-hover);
+}
+.chat-item.selected {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+/* ─── OTP Input ─────────────────────────────────────────── */
+.otp-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--primary);
+}
+.otp-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+.otp-input.filled {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* ─── Tab indicator ─────────────────────────────────────── */
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  color: var(--text-muted);
+  background: transparent;
+}
+.tab-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-light);
+}
+.tab-btn:hover:not(.active) {
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+/* ─── Notification dot ──────────────────────────────────── */
+.notif-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid var(--bg);
+}
+
+/* ─── Online status dot ─────────────────────────────────── */
+.online-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--bg);
+}
+
+/* ─── Message input area ────────────────────────────────── */
+.msg-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 0.625rem 1.25rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: none;
+  font-family: inherit;
+}
+.msg-input::placeholder { color: var(--text-muted); }
+.msg-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* ─── Send button ───────────────────────────────────────── */
+.send-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-primary);
+}
+.send-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+}
+.send-btn:active:not(:disabled) { transform: scale(0.95); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Skeleton loader ───────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius);
+}
+
+/* ─── Emoji picker ──────────────────────────────────────── */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.emoji-btn {
+  font-size: 1.3rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.1s;
+  line-height: 1;
+}
+.emoji-btn:hover { background: var(--bg-card-hover); }
+
+/* ─── AI Panel ──────────────────────────────────────────── */
+.ai-bubble-user {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+  padding: 0.6rem 1rem;
+  max-width: 80%;
+  align-self: flex-end;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.ai-bubble-bot {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 18px 18px 18px 4px;
+  padding: 0.6rem 1rem;
+  max-width: 85%;
+  align-self: flex-start;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* ─── Video Call UI ─────────────────────────────────────── */
+.call-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+}
+
+.call-btn {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  font-size: 1.1rem;
+}
+.call-btn:hover { transform: scale(1.1); }
+.call-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+.call-btn.muted {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+}
+.call-btn.end {
+  background: #ef4444;
+  color: white;
+  width: 4rem;
+  height: 4rem;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+}
+.call-btn.end:hover { box-shadow: 0 6px 28px rgba(239, 68, 68, 0.7); }

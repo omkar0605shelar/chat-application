@@ -9,10 +9,11 @@ interface ChatWindowProps {
     selectedChat: ChatWithUser;
     messages: Message[];
     onSendMessage: (text: string, image?: File) => void;
+    onStartCall: (isVideo: boolean) => void;
     isTyping: boolean;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ selectedChat, messages, onSendMessage, isTyping }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ selectedChat, messages, onSendMessage, onStartCall, isTyping }) => {
     const [text, setText] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -66,22 +67,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedChat, messages, onSendM
     };
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-white/5 backdrop-blur-sm">
+        <div className="flex-1 flex flex-col h-full bg-slate-900/40 backdrop-blur-xl border-l border-white/10">
             {/* Header */}
-            <div className="p-4 border-b border-white/20 flex items-center justify-between bg-white/20">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5 backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                        {selectedChat.user.name[0].toUpperCase()}
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg border border-white/20">
+                            {selectedChat.user.name[0].toUpperCase()}
+                        </div>
+                        <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-slate-900 rounded-full"></div>
                     </div>
                     <div>
-                        <h3 className="font-semibold text-gray-800">{selectedChat.user.name}</h3>
-                        <p className="text-xs text-gray-500">{selectedChat.user.email}</p>
+                        <h3 className="font-bold text-white tracking-tight">{selectedChat.user.name}</h3>
+                        <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Active Now</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 text-gray-500">
-                    <button className="hover:text-blue-600 transition-colors"><Phone className="w-5 h-5" /></button>
-                    <button className="hover:text-blue-600 transition-colors"><Video className="w-5 h-5" /></button>
-                    <button className="hover:text-blue-600 transition-colors"><MoreVertical className="w-5 h-5" /></button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => onStartCall(false)}
+                        className="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                    >
+                        <Phone className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => onStartCall(true)}
+                        className="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                    >
+                        <Video className="w-5 h-5" />
+                    </button>
+                    <button className="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all">
+                        <MoreVertical className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
 
@@ -126,12 +142,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedChat, messages, onSendM
             )}
 
             {/* Input */}
-            <form onSubmit={handleSend} className="p-4 border-t border-white/20 bg-white/20">
-                <div className="flex items-center gap-2">
+            <form onSubmit={handleSend} className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-md">
+                <div className="flex items-center gap-3">
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-2 text-gray-500 hover:bg-white/40 rounded-full transition-all"
+                        className="p-3 text-gray-400 hover:text-white hover:bg-white/10 rounded-2xl transition-all"
                     >
                         <ImageIcon className="w-6 h-6" />
                     </button>
@@ -142,19 +158,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ selectedChat, messages, onSendM
                         className="hidden"
                         accept="image/*"
                     />
-                    <button type="button" className="p-2 text-gray-500 hover:bg-white/40 rounded-full transition-all">
-                        <Smile className="w-6 h-6" />
-                    </button>
-                    <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder="Type a message..."
-                        className="flex-1 bg-white/50 border border-white/30 rounded-2xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
-                    />
+                    
+                    <div className="flex-1 relative flex items-center">
+                        <input
+                            type="text"
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            placeholder="Message..."
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-inner"
+                        />
+                        <button type="button" className="absolute right-3 p-1.5 text-gray-400 hover:text-yellow-400 transition-colors">
+                            <Smile className="w-6 h-6" />
+                        </button>
+                    </div>
+
                     <button
                         type="submit"
-                        className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all"
+                        disabled={!text && !image}
+                        className="p-4 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-500/30 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
                     >
                         <Send className="w-5 h-5" />
                     </button>
