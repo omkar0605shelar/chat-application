@@ -5,6 +5,8 @@ import { ArrowLeft, Loader2, RefreshCcw } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import Logo from '../components/ui/Logo';
+import { useAppDispatch } from '../app/hooks';
+import { setUser } from '../features/auth/authSlice';
 
 const VerifyOtpPage: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -15,6 +17,7 @@ const VerifyOtpPage: React.FC = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const email = location.state?.email || '';
 
   useEffect(() => {
@@ -62,13 +65,13 @@ const VerifyOtpPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // POST /api/v1/user/verify { email, otp }
-      const res = await axios.post('http://localhost:5000/api/v1/user/verify', { email, otp: otpString });
+      // Fixed endpoint from /api/v1/user/verify to /api/v1/verify
+      const res = await axios.post('http://localhost:5000/api/v1/verify', { email, otp: otpString });
       toast.success('Verification successful!');
       
-      // Store token (logic simplified for brevity, real app would update Redux/Auth state)
-      const { token } = res.data;
-      localStorage.setItem('token', token);
+      // Update Redux authentication state
+      const { token, user } = res.data;
+      dispatch(setUser({ user, token }));
       
       navigate('/');
     } catch (error: any) {

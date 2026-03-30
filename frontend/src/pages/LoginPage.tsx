@@ -17,8 +17,8 @@ const LoginPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Assuming back-end matches the spec: POST /api/v1/login { email }
-      await axios.post('http://localhost:5000/api/v1/user/login', { email });
+      // Fixed endpoint from /api/v1/user/login to /api/v1/login
+      await axios.post('http://localhost:5000/api/v1/login', { email });
       toast.success('OTP sent to your email!');
       // Navigate to verify page with email in state
       navigate('/verify', { state: { email } });
@@ -65,8 +65,8 @@ const LoginPage: React.FC = () => {
           <div className="flex flex-col items-center mb-10">
             <Logo size={64} showText={false} />
             <motion.h1 
-              initial={{ opacity: 0, s: 0.95 }}
-              animate={{ opacity: 1, s: 1 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               className="text-4xl font-bold text-text-charcoal mt-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary-soft"
             >
               NexTalk
