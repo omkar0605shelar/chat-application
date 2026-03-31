@@ -1,37 +1,41 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image as ImageIcon, Smile, MoreHorizontal, Phone, Video, Search, ChevronLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Send, Image as ImageIcon, Smile, MoreHorizontal, Phone, Video, Search } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { addMessage } from '../../features/chat/chatSlice';
+import { fetchMessages, sendMessageToBackend } from '../../features/chat/chatSlice';
 
 const MessageBubble: React.FC<{ message: any; isOwn: boolean }> = ({ message, isOwn }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-4`}
+      className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-4 w-full`}
     >
-      <div className={`max-w-[70%] p-3 px-4 rounded-2xl ${
+      <div className={`max-w-[75%] p-3 px-4 rounded-2xl relative shadow-sm ${
         isOwn 
-          ? 'bg-gradient-to-br from-primary to-primary-soft text-white rounded-tr-none shadow-md shadow-primary/10' 
-          : 'bg-white border border-primary/5 text-text-charcoal rounded-tl-none shadow-sm'
+          ? 'bg-[#DCF8C6] text-[#303030] rounded-tr-none border-l-4 border-l-[#7C5CBF]/10' 
+          : 'bg-white border border-primary/5 text-text-charcoal rounded-tl-none'
       }`}>
-        {message.type === 'image' ? (
-          <img src={message.content} alt="sent image" className="rounded-xl w-full h-auto cursor-pointer border border-white/20" />
+        {message.messageType === 'image' || message.type === 'image' ? (
+          <img src={message.image?.url || message.content} alt="sent image" className="rounded-xl w-full h-auto cursor-pointer border border-white/20" />
         ) : (
-          <p className="text-sm font-medium leading-relaxed">{message.content}</p>
+          <p className="text-sm font-medium leading-relaxed">{message.text || message.content}</p>
         )}
-      </div>
-      <div className="flex items-center gap-1 mt-1 px-1">
-        <span className="text-[10px] text-primary/30 font-bold uppercase">{message.time || '12:34 PM'}</span>
-        {isOwn && (
-          <span className="text-accent-coral ml-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6L9 17L4 12" />
-            </svg>
+        
+        <div className={`flex items-center gap-1 mt-1 justify-end`}>
+          <span className="text-[9px] text-[#919191] font-bold uppercase">
+            {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:34 PM'}
           </span>
-        )}
+          {isOwn && (
+            <span className="text-[#53bdeb] ml-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6L9 17L4 12" />
+                <path d="M16 6L7.5 14.5" />
+              </svg>
+            </span>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -48,16 +52,17 @@ const ChatWindow: React.FC = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    if (activeChat) {
+      dispatch(fetchMessages(activeChat.chat._id));
+    }
+  }, [activeChat, dispatch]);
+
   const handleSend = () => {
-    if (!input.trim()) return;
-    dispatch(addMessage({
-      id: Date.now().toString(),
-      sender: user?.id || 'me',
-      chatId: activeChat?.id || '',
-      content: input,
-      type: 'text',
-      createdAt: new Date().toISOString(),
-      seen: false
+    if (!input.trim() || !activeChat) return;
+    dispatch(sendMessageToBackend({
+      chatId: activeChat.chat._id,
+      text: input
     }));
     setInput('');
   };
@@ -87,9 +92,9 @@ const ChatWindow: React.FC = () => {
       {/* Top Bar */}
       <div className="h-20 px-8 flex items-center justify-between border-b border-primary/5 bg-white/40 shadow-sm backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <Avatar size="md" online={true} />
+          <Avatar name={activeChat.user.name} src={activeChat.user.avatar} size="md" online={true} />
           <div>
-            <h3 className="text-base font-bold text-text-charcoal leading-none">Omkar Shelar</h3>
+            <h3 className="text-base font-bold text-text-charcoal leading-none">{activeChat.user.name}</h3>
             <span className="text-xs text-emerald-400 font-bold mt-1 block">Online</span>
           </div>
         </div>
@@ -108,16 +113,18 @@ const ChatWindow: React.FC = () => {
         className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-transparent"
       >
         <div className="flex flex-col py-4">
-          <div className="text-center mb-8">
-            <span className="px-4 py-1.5 rounded-full bg-white/60 border border-primary/5 text-[10px] font-bold text-primary/30 uppercase tracking-widest backdrop-blur-sm">Today</span>
-          </div>
+          {messages.length === 0 ? (
+            <div className="text-center my-10">
+              <p className="text-sm text-primary/30 font-medium">Start the conversation with {activeChat.user.name} ✨</p>
+            </div>
+          ) : (
+            <div className="text-center mb-8">
+              <span className="px-4 py-1.5 rounded-full bg-white/60 border border-primary/5 text-[10px] font-bold text-primary/30 uppercase tracking-widest backdrop-blur-sm">Messages</span>
+            </div>
+          )}
           
-          <MessageBubble isOwn={false} message={{ content: "Yo! Have you seen the new NexTalk design system? It's literally built with glassmorphism!", type: 'text' }} />
-          <MessageBubble isOwn={true} message={{ content: "Just saw it, looks fire 🔥 The animations are so smooth.", type: 'text' }} />
-          <MessageBubble isOwn={false} message={{ content: "Check out this screenshot from the dev site.", type: 'text' }} />
-          <MessageBubble isOwn={false} message={{ content: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop", type: 'image' }} />
           {messages.map(msg => (
-            <MessageBubble key={msg.id} isOwn={msg.sender === user?.id} message={msg} />
+            <MessageBubble key={msg._id || msg.id} isOwn={msg.sender === user?._id} message={msg} />
           ))}
         </div>
       </div>

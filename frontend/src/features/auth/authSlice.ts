@@ -1,7 +1,8 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import api from '../../api/axios';
 
 interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   avatar?: string;
@@ -13,6 +14,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  isInitialized: boolean;
 }
 
 const initialState: AuthState = {
@@ -21,7 +23,20 @@ const initialState: AuthState = {
   isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
   error: null,
+  isInitialized: !localStorage.getItem('token'), // If no token, it's already "initialized" as guest
 };
+
+export const fetchUser = createAsyncThunk(
+  'auth/fetchUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get('/me');
+      return res.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Session expired');
+    }
+  }
+);
 
 export const authSlice = createSlice({
   name: 'auth',
@@ -37,6 +52,7 @@ export const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.isInitialized = true;
       localStorage.removeItem('token');
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -45,6 +61,26 @@ export const authSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+        state.loading = false;
+        state.isInitialized = true;
+      })
+      .addCase(fetchUser.rejected, (state) => {
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+        state.isInitialized = true;
+        localStorage.removeItem('token');
+      });
   },
 });
 

@@ -1,4 +1,5 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import api from '../../api/axios';
 
 interface FriendRequest {
   id: string;
@@ -29,6 +30,18 @@ const initialState: FriendState = {
   error: null,
 };
 
+export const fetchFriends = createAsyncThunk(
+  'friends/fetchFriends',
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await api.get('/friends');
+      return res.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch friends');
+    }
+  }
+);
+
 export const friendSlice = createSlice({
   name: 'friends',
   initialState,
@@ -49,6 +62,21 @@ export const friendSlice = createSlice({
       const friend = state.friends.find(f => f.id === action.payload.id);
       if (friend) friend.online = action.payload.online;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchFriends.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchFriends.fulfilled, (state, action) => {
+        state.loading = false;
+        state.friends = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchFriends.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { addMessage, markSeen } from '../features/chat/chatSlice';
+import { fetchFriends } from '../features/friends/friendSlice';
 import toast from 'react-hot-toast';
 
 const SOCKET_URL = 'http://localhost:5000';
@@ -36,6 +37,11 @@ export const useSocket = () => {
 
     socket.on('newFriendRequest', (req) => {
       toast.success(`New friend request from ${req.senderName}`);
+    });
+
+    socket.on('friendRequestAccepted', () => {
+      toast.success('You have a new friend connection!');
+      dispatch(fetchFriends());
     });
 
     socket.on('error', (err) => {

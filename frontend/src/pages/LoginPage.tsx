@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, ArrowRight, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../components/ui/Logo';
 import toast from 'react-hot-toast';
@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       // Fixed endpoint from /api/v1/user/login to /api/v1/login
-      await axios.post('http://localhost:5000/api/v1/login', { email });
+      await api.post('/login', { email });
       toast.success('OTP sent to your email!');
       // Navigate to verify page with email in state
       navigate('/verify', { state: { email } });

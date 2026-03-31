@@ -3,10 +3,10 @@ import TryCatch from "../config/TryCatch.js";
 import type { AuthenticatedRequest } from "../middleware/isAuth.js";
 import { User } from "../model/User.js";
 import { FriendRequest } from "../model/FriendRequest.js";
-import { io, userSocketMap } from "../index.js";
+import { io, userSocketMap, redisClient } from "../index.js";
 
 export const sendFriendRequest = TryCatch(async (req: AuthenticatedRequest, res) => {
-    const senderId = req.user?._id;
+    const senderId = req.user!._id;
     const { receiverId } = req.body;
 
     if (!receiverId) {
@@ -59,7 +59,7 @@ export const sendFriendRequest = TryCatch(async (req: AuthenticatedRequest, res)
 });
 
 export const acceptFriendRequest = TryCatch(async (req: AuthenticatedRequest, res) => {
-    const userId = req.user?._id;
+    const userId = req.user!._id;
     const { requestId } = req.params;
 
     const request = await FriendRequest.findById(requestId);
@@ -88,7 +88,7 @@ export const acceptFriendRequest = TryCatch(async (req: AuthenticatedRequest, re
             otherUserId: request.sender
         }, {
             headers: {
-                Authorization: req.headers.authorization
+                Authorization: req.headers.authorization!
             }
         });
     } catch (error) {
@@ -113,7 +113,7 @@ export const acceptFriendRequest = TryCatch(async (req: AuthenticatedRequest, re
 });
 
 export const rejectFriendRequest = TryCatch(async (req: AuthenticatedRequest, res) => {
-    const userId = req.user?._id;
+    const userId = req.user!._id;
     const { requestId } = req.params;
 
     const request = await FriendRequest.findById(requestId);
@@ -136,7 +136,7 @@ export const rejectFriendRequest = TryCatch(async (req: AuthenticatedRequest, re
 });
 
 export const getFriendRequests = TryCatch(async (req: AuthenticatedRequest, res) => {
-    const userId = req.user?._id;
+    const userId = req.user!._id;
 
     const requests = await FriendRequest.find({
         receiver: userId,
@@ -146,5 +146,110 @@ export const getFriendRequests = TryCatch(async (req: AuthenticatedRequest, res)
     res.json({
         success: true,
         data: requests
+    });
+});
+
+export const generateFriendOtp = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const userId = req.user!._id;
+    
+    // Generate 5-digit OTP
+    const otp = Math.floor(10000 + Math.random() * 90000).toString();
+    
+    // Set in Redis with 10 mins (600 seconds) expiry
+    await redisClient.setEx(`friend_otp:${otp}`, 600, userId!.toString());
+    
+    res.json({
+        success: true,
+        message: "OTP generated successfully",
+        data: { otp, expiresInfo: "10 minutes" }
+    });
+});
+
+export const addFriendByOtp = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const userId = req.user!._id;
+    const { otp } = req.body;
+    
+    if (!otp) return res.status(400).json({ success: false, message: "OTP is required" });
+    
+    const friendId = await redisClient.get(`friend_otp:${otp}`);
+    
+    if (!friendId) {
+        return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+    
+    if (friendId === userId?.toString()) {
+        return res.status(400).json({ success: false, message: "You cannot add yourself" });
+    }
+    
+    const friend = await User.findById(friendId);
+    if (!friend) {
+        return res.status(404).json({ success: false, message: "User not found" });
+    }
+    
+    const isAlreadyFriends = friend.friends.includes(userId as any);
+    if (isAlreadyFriends) {
+        return res.status(400).json({ success: false, message: "You are already friends" });
+    }
+    
+    // Add to friends lists mutually
+    await User.findByIdAndUpdate(userId, { $addToSet: { friends: friendId } });
+    await User.findByIdAndUpdate(friendId, { $addToSet: { friends: userId } });
+    
+    // Invalidate the OTP to prevent reuse
+    await redisClient.del(`friend_otp:${otp}`);
+    
+    // Create conversation in Chat Service
+    try {
+        await axios.post(`${process.env.CHAT_SERVICE}/api/v1/new`, {
+            otherUserId: friendId
+        }, {
+            headers: {
+                Authorization: req.headers.authorization!
+            }
+        });
+    } catch (error) {
+        console.error("Error creating conversation in chat service via OTP:", error);
+    }
+    
+    // Notify both users' sockets so their UIs update automatically
+    const friendSocketId = userSocketMap[friendId];
+    if (friendSocketId) {
+        io.to(friendSocketId).emit("friendRequestAccepted", {
+            receiverId: userId
+        });
+    }
+    
+    const mySocketId = userSocketMap[userId!.toString()];
+    if (mySocketId) {
+        io.to(mySocketId).emit("friendRequestAccepted", {
+            receiverId: friendId
+        });
+    }
+
+    res.json({
+        success: true,
+        message: "Friend added via OTP successfully",
+        data: { friendId }
+    });
+});
+
+export const getMyFriends = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const userId = req.user!._id;
+    const user = await User.findById(userId).populate("friends", "name email avatar");
+    
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    
+    // Map to normalized friend format with online status
+    const formattedFriends = user.friends.map((f: any) => ({
+        id: f._id.toString(),
+        name: f.name,
+        email: f.email,
+        avatar: f.avatar,
+        online: Object.keys(userSocketMap).includes(f._id.toString())
+    }));
+    
+    res.json({
+        success: true,
+        data: formattedFriends
     });
 });

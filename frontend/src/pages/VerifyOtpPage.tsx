@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, RefreshCcw } from 'lucide-react';
-import axios from 'axios';
+import api from '../api/axios';
 import toast from 'react-hot-toast';
 import Logo from '../components/ui/Logo';
 import { useAppDispatch } from '../app/hooks';
@@ -66,7 +66,7 @@ const VerifyOtpPage: React.FC = () => {
     setLoading(true);
     try {
       // Fixed endpoint from /api/v1/user/verify to /api/v1/verify
-      const res = await axios.post('http://localhost:5000/api/v1/verify', { email, otp: otpString });
+      const res = await api.post('/verify', { email, otp: otpString });
       toast.success('Verification successful!');
       
       // Update Redux authentication state
@@ -85,7 +85,7 @@ const VerifyOtpPage: React.FC = () => {
     if (!canResend) return;
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/v1/user/login', { email });
+      await api.post('/login', { email });
       toast.success('OTP resent!');
       setTimer(300);
       setCanResend(false);

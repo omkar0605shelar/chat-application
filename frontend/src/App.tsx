@@ -2,16 +2,21 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Provider } from 'react-redux';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import store from './app/store';
 import LoginPage from './pages/LoginPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
 import Sidebar from './components/layout/Sidebar';
 import ChatWindow from './components/chat/ChatWindow';
-import { useAppSelector } from './app/hooks';
+import { useAppSelector, useAppDispatch } from './app/hooks';
+import { fetchUser } from './features/auth/authSlice';
+import Logo from './components/ui/Logo';
 
 const ChatLayout: React.FC = () => {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, isInitialized } = useAppSelector((state) => state.auth);
 
+  if (!isInitialized) return null;
   if (!isAuthenticated) return <Navigate to="/login" />;
 
   return (
@@ -42,6 +47,33 @@ const ChatLayout: React.FC = () => {
 };
 
 const AppRoutes: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const { isInitialized, token } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (token && !isInitialized) {
+      dispatch(fetchUser());
+    }
+  }, [dispatch, token, isInitialized]);
+
+  if (!isInitialized && token) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-bg-soft">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center"
+        >
+          <Logo size={64} showText={false} />
+          <div className="mt-8 flex items-center gap-3 text-primary font-bold">
+            <Loader2 className="animate-spin" size={24} />
+            <span className="tracking-widest uppercase text-xs">Securing Session...</span>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Toaster 
