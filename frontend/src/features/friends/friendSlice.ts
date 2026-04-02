@@ -12,7 +12,7 @@ interface Friend {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
+  avatar?: { url: string; publicId: string };
   online: boolean;
 }
 

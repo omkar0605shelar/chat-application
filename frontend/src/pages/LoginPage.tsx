@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, MessageSquare, Shield, Zap } from 'lucide-react';
 import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../components/ui/Logo';
 import toast from 'react-hot-toast';
 
+const FeatureItem = ({ icon: Icon, title, desc }: { icon: any, title: string, desc: string }) => (
+  <motion.div 
+    initial={{ opacity: 0, x: -20 }}
+    whileInView={{ opacity: 1, x: 0 }}
+    className="flex items-start gap-4 p-4 rounded-3xl hover:bg-white/5 transition-colors group"
+  >
+    <div className="p-3 rounded-2xl bg-white/10 text-white group-hover:scale-110 transition-transform">
+      <Icon size={24} />
+    </div>
+    <div>
+      <h4 className="font-bold text-white text-lg">{title}</h4>
+      <p className="text-white/60 text-sm leading-relaxed">{desc}</p>
+    </div>
+  </motion.div>
+);
+
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    document.title = 'NexTalk | Login';
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,10 +37,8 @@ const LoginPage: React.FC = () => {
 
     setLoading(true);
     try {
-      // Fixed endpoint from /api/v1/user/login to /api/v1/login
       await api.post('/login', { email });
       toast.success('OTP sent to your email!');
-      // Navigate to verify page with email in state
       navigate('/verify', { state: { email } });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Something went wrong');
@@ -30,76 +48,100 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-bg-soft font-sans">
-      {/* Animated Background Gradients */}
-      <div className="absolute inset-0 pointer-events-none">
+    <div className="min-h-screen w-full flex bg-white font-sans overflow-hidden">
+      {/* Left Decorative Panel - Visible on MD+ */}
+      <div className="hidden lg:flex w-1/2 bg-primary relative items-center justify-center p-12 overflow-hidden">
+        {/* Animated Background Blobs */}
         <motion.div 
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-            x: [0, 100, 0],
-            y: [0, -50, 0],
+            rotate: [0, 90, 0],
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]"
+          transition={{ duration: 20, repeat: Infinity }}
+          className="absolute -top-20 -left-20 w-96 h-96 bg-primary-soft/30 blur-[100px] rounded-full"
         />
         <motion.div 
           animate={{
             scale: [1, 1.3, 1],
-            opacity: [0.2, 0.4, 0.2],
-            x: [0, -100, 0],
-            y: [0, 100, 0],
+            x: [0, 50, 0],
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-accent-coral/10 blur-[120px]"
+          transition={{ duration: 15, repeat: Infinity }}
+          className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-accent-coral/20 blur-[120px] rounded-full"
         />
+
+        <div className="relative z-10 w-full max-w-lg">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
+            <Logo size={80} showText={true} color="white" />
+            <h1 className="text-6xl font-black text-white mt-8 tracking-tighter leading-none">
+              Connect <br /> Beyond <br /> Limits.
+            </h1>
+            <p className="text-white/70 text-xl mt-6 font-medium">
+              The next generation of real-time messaging, built for everyone.
+            </p>
+          </motion.div>
+
+          <div className="space-y-4">
+            <FeatureItem 
+              icon={MessageSquare} 
+              title="Real-time Chat" 
+              desc="Instant messaging with delivery status and typing indicators." 
+            />
+            <FeatureItem 
+              icon={Shield} 
+              title="Secure & Private" 
+              desc="Your data is encrypted and secure with our microservice architecture." 
+            />
+            <FeatureItem 
+              icon={Zap} 
+              title="Blazing Fast" 
+              desc="Optimized performance for a smooth and responsive experience." 
+            />
+          </div>
+        </div>
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md px-6 z-10"
-      >
-        <div className="glass rounded-[32px] p-8 md:p-12 shadow-2xl backdrop-blur-xl border border-white/40">
-          <div className="flex flex-col items-center mb-10">
+      {/* Right Form Panel */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-bg-soft">
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="lg:hidden mb-12 flex justify-center">
             <Logo size={64} showText={false} />
-            <motion.h1 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-4xl font-bold text-text-charcoal mt-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary-soft"
-            >
-              NexTalk
-            </motion.h1>
-            <p className="text-primary-soft font-medium mt-2">Connect. Chat. Vibe.</p>
+          </div>
+
+          <div className="mb-10">
+            <h2 className="text-4xl font-black text-text-charcoal tracking-tight">Welcome Back</h2>
+            <p className="text-text-charcoal/40 font-medium mt-2">Enter your email to continue to NexTalk</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            <div className="relative">
-              <motion.div 
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 pointer-events-none"
-                animate={{ opacity: email ? 0 : 1 }}
-              >
-                <Mail size={20} />
-              </motion.div>
-              
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoFocus
-                className="w-full bg-white/50 border-2 border-primary/5 rounded-2xl py-4 pl-12 pr-4 text-text-charcoal placeholder:text-primary/30 focus:outline-none focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all text-lg"
-                placeholder="Enter your email"
-              />
-              
-              {/* Floating Label / Indicator could go here, but using placeholder for simplicity as per common modern UX */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-text-charcoal/60 ml-1">Email Address</label>
+              <div className="relative group">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 group-focus-within:text-primary transition-colors">
+                  <Mail size={22} />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-white border-2 border-primary/5 rounded-2xl py-4 pl-12 pr-4 text-text-charcoal placeholder:text-primary/20 focus:outline-none focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all text-lg font-medium shadow-sm"
+                  placeholder="name@example.com"
+                />
+              </div>
             </div>
 
             <motion.button
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full h-14 relative group overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary-soft text-white font-bold text-lg shadow-lg shadow-primary/20"
+              className="w-full h-16 relative group overflow-hidden rounded-2xl bg-primary text-white font-bold text-lg shadow-xl shadow-primary/20 transition-all hover:bg-primary-soft disabled:opacity-70"
               disabled={loading}
             >
               <AnimatePresence mode="wait">
@@ -111,7 +153,7 @@ const LoginPage: React.FC = () => {
                     exit={{ opacity: 0 }}
                     className="flex justify-center"
                   >
-                    <Loader2 className="animate-spin" />
+                    <Loader2 className="animate-spin" size={24} />
                   </motion.div>
                 ) : (
                   <motion.div 
@@ -121,23 +163,22 @@ const LoginPage: React.FC = () => {
                     exit={{ opacity: 0 }}
                     className="flex items-center justify-center gap-2"
                   >
-                    Get Started
-                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    Send OTP Code
+                    <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-primary/40">
-            By continuing, you agree to our <span className="underline cursor-pointer hover:text-primary">Terms of Service</span>
-          </p>
-        </div>
-        
-        <div className="mt-8 text-center">
-          <p className="text-primary/40 text-sm font-medium">✨ Premium Chat Experience</p>
-        </div>
-      </motion.div>
+          <div className="mt-12 pt-8 border-t border-primary/5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-text-charcoal/40">New here? No problem.</span>
+              <button className="text-primary font-bold hover:underline">Learn More</button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };

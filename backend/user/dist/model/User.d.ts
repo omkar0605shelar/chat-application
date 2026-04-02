@@ -3,6 +3,10 @@ export interface IUser extends Document {
     name: string;
     email: string;
     friends: Types.ObjectId[];
+    avatar?: {
+        url: string;
+        publicId: string;
+    };
 }
 export declare const User: mongoose.Model<IUser, {}, {}, {}, mongoose.Document<unknown, {}, IUser, {}, mongoose.DefaultSchemaOptions> & IUser & Required<{
     _id: Types.ObjectId;

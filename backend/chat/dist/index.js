@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import multer from 'multer';
 import { connectDb } from './config/db.js';
 import chatRoutes from './routes/chat.js';
 dotenv.config();
@@ -18,6 +19,22 @@ const port = process.env.PORT || 5002;
 app.use(cors());
 app.use(express.json());
 app.use("/api/v1", chatRoutes);
+app.use((err, _req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+            message: 'Image is too large. Maximum file size is 5MB.',
+        });
+    }
+    if (err) {
+        return res.status(500).json({
+            message: err.message || 'Internal server error',
+        });
+    }
+    next();
+});
 // Socket.IO Logic
 export const userSocketMap = {}; // {userId: socketId}
 io.on("connection", (socket) => {

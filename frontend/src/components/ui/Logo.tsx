@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const Logo: React.FC<{ size?: number; showText?: boolean }> = ({ size = 40, showText = false }) => {
+const Logo: React.FC<{ size?: number; showText?: boolean; className?: string; color?: string }> = ({ size = 40, showText = false, className = '', color }) => {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center gap-3 ${className}`}>
       <motion.div 
         className="relative flex items-center justify-center p-1"
         whileHover={{ scale: 1.05 }}
@@ -20,7 +20,7 @@ const Logo: React.FC<{ size?: number; showText?: boolean }> = ({ size = 40, show
           {/* Left Bubble */}
           <path 
             d="M20 30H50C58.3 30 65 36.7 65 45V60C65 68.3 58.3 75 50 75H35L20 85V75C11.7 75 5 68.3 5 60V45C5 36.7 11.7 30 20 30Z" 
-            fill="#7C5CBF" 
+            fill={color || "#7C5CBF"} 
           />
           {/* Right Bubble (Offset) */}
           <path 

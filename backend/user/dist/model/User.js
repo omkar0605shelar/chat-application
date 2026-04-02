@@ -12,7 +12,11 @@ const schema = new Schema({
     friends: [{
             type: Schema.Types.ObjectId,
             ref: "User"
-        }]
+        }],
+    avatar: {
+        url: String,
+        publicId: String
+    }
 }, {
     timestamps: true
 });

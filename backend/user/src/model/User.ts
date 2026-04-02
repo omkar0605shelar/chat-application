@@ -4,6 +4,10 @@ export interface IUser extends Document {
   name: string;
   email: string;
   friends: Types.ObjectId[];
+  avatar?: {
+    url: string;
+    publicId: string;
+  };
 }
 
 const schema: Schema<IUser> = new Schema({
@@ -19,7 +23,11 @@ const schema: Schema<IUser> = new Schema({
   friends: [{
     type: Schema.Types.ObjectId,
     ref: "User"
-  }]
+  }],
+  avatar: {
+    url: String,
+    publicId: String
+  }
 }, {
   timestamps: true
 });

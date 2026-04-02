@@ -5,7 +5,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  avatar?: string;
+  avatar?: { url: string; publicId: string };
 }
 
 interface AuthState {
@@ -34,6 +34,18 @@ export const fetchUser = createAsyncThunk(
       return res.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Session expired');
+    }
+  }
+);
+
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (formData: FormData, { rejectWithValue }) => {
+    try {
+      const res = await api.post('/update/profile', formData);
+      return res.data; // { message, user, token }
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
     }
   }
 );
@@ -80,6 +92,20 @@ export const authSlice = createSlice({
         state.loading = false;
         state.isInitialized = true;
         localStorage.removeItem('token');
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        localStorage.setItem('token', action.payload.token);
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

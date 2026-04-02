@@ -3,9 +3,10 @@ import axios from 'axios';
 const createInstance = (baseURL: string) => {
   const instance = axios.create({
     baseURL,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    // Do not force Content-Type globally.
+    // Axios will set the correct header for JSON bodies and will allow the browser
+    // to set multipart boundaries for FormData uploads.
+    headers: {},
   });
 
   // Request interceptor to add the token to every request

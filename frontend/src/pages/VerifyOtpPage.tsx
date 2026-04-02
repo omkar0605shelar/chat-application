@@ -1,18 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, RefreshCcw } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCcw, ShieldCheck } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
-import Logo from '../components/ui/Logo';
 import { useAppDispatch } from '../app/hooks';
 import { setUser } from '../features/auth/authSlice';
 
 const VerifyOtpPage: React.FC = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(300); // 5 minutes in seconds
-  const [canResend, setCanResend] = useState(timer === 0);
+  const [timer, setTimer] = useState(60); // 60 seconds for resend
+  const [canResend, setCanResend] = useState(false);
   
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const location = useLocation();
@@ -21,6 +20,7 @@ const VerifyOtpPage: React.FC = () => {
   const email = location.state?.email || '';
 
   useEffect(() => {
+    document.title = 'NexTalk | Verify';
     if (!email) {
       toast.error('No email found. Please login again.');
       navigate('/login');
@@ -50,6 +50,14 @@ const VerifyOtpPage: React.FC = () => {
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
+
+    // Auto verify if last digit entered
+    if (value && index === 5) {
+      const otpString = newOtp.join('');
+      if (otpString.length === 6) {
+        handleVerifyInternal(otpString);
+      }
+    }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -58,21 +66,13 @@ const VerifyOtpPage: React.FC = () => {
     }
   };
 
-  const handleVerify = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const otpString = otp.join('');
-    if (otpString.length < 6) return toast.error('Please enter complete OTP');
-
+  const handleVerifyInternal = async (otpString: string) => {
     setLoading(true);
     try {
-      // Fixed endpoint from /api/v1/user/verify to /api/v1/verify
       const res = await api.post('/verify', { email, otp: otpString });
       toast.success('Verification successful!');
-      
-      // Update Redux authentication state
       const { token, user } = res.data;
       dispatch(setUser({ user, token }));
-      
       navigate('/');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Invalid OTP');
@@ -81,13 +81,20 @@ const VerifyOtpPage: React.FC = () => {
     }
   };
 
+  const handleVerify = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const otpString = otp.join('');
+    if (otpString.length < 6) return toast.error('Please enter complete OTP');
+    handleVerifyInternal(otpString);
+  };
+
   const handleResend = async () => {
     if (!canResend) return;
     setLoading(true);
     try {
       await api.post('/login', { email });
       toast.success('OTP resent!');
-      setTimer(300);
+      setTimer(60);
       setCanResend(false);
     } catch (error: any) {
       toast.error('Failed to resend OTP');
@@ -96,37 +103,41 @@ const VerifyOtpPage: React.FC = () => {
     }
   };
 
-  // SVG circular progress
-  const progress = (timer / 300) * 100;
-  const radius = 24;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-bg-soft font-sans">
+    <div className="min-h-screen w-full flex items-center justify-center bg-bg-soft font-sans relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent-coral/5 blur-[120px]" />
+      </div>
+
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg px-6"
+        className="w-full max-w-md px-6 relative z-10"
       >
-        <div className="glass rounded-[32px] p-8 md:p-12 shadow-2xl backdrop-blur-xl border border-white/40">
-          <div className="flex flex-col items-center mb-8">
-            <Logo size={48} showText={false} />
-            <h1 className="text-3xl font-bold text-text-charcoal mt-6 tracking-tight">Verify Your Identity</h1>
-            <p className="text-primary/60 font-medium mt-2 text-center">
-              Enter the 6-digit code sent to <br />
+        <button 
+          onClick={() => navigate('/login')}
+          className="flex items-center gap-2 text-primary font-bold mb-8 hover:translate-x-[-4px] transition-transform"
+        >
+          <ArrowLeft size={20} />
+          Back to Login
+        </button>
+
+        <div className="glass rounded-[40px] p-10 md:p-12 shadow-2xl backdrop-blur-2xl border border-white/60">
+          <div className="flex flex-col items-center mb-10">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6">
+              <ShieldCheck size={32} />
+            </div>
+            <h1 className="text-3xl font-black text-text-charcoal tracking-tight text-center">Verify Identity</h1>
+            <p className="text-text-charcoal/40 font-medium mt-3 text-center leading-relaxed">
+              We've sent a 6-digit code to <br />
               <span className="text-primary font-bold">{email}</span>
             </p>
           </div>
 
           <form onSubmit={handleVerify} className="space-y-10">
-            <div className="flex justify-between gap-2 max-w-sm mx-auto">
+            <div className="flex justify-between gap-2">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -137,80 +148,57 @@ const VerifyOtpPage: React.FC = () => {
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-16 md:w-14 md:h-18 bg-white border-2 border-primary/10 rounded-2xl text-center text-2xl font-bold text-primary focus:border-primary focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
+                  autoFocus={index === 0}
+                  className="w-11 h-14 md:w-14 md:h-18 bg-white border-2 border-primary/5 rounded-2xl text-center text-2xl font-black text-primary focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all shadow-sm"
                 />
               ))}
             </div>
 
-            <div className="flex flex-col items-center gap-6">
-              <div className="relative w-16 h-16 flex items-center justify-center">
-                <svg className="w-16 h-16 transform -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r={radius}
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="transparent"
-                    className="text-primary/5"
-                  />
-                  <motion.circle
-                    cx="32"
-                    cy="32"
-                    r={radius}
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="transparent"
-                    strokeDasharray={circumference}
-                    animate={{ strokeDashoffset }}
-                    className="text-accent-coral"
-                    strokeLinecap="round"
-                    transition={{ duration: 1, ease: 'linear' }}
-                  />
-                </svg>
-                <div className="absolute text-xs font-bold text-accent-coral">
-                  {formatTime(timer)}
-                </div>
-              </div>
+            <div className="space-y-6">
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full h-16 relative group overflow-hidden rounded-2xl bg-primary text-white font-bold text-lg shadow-xl shadow-primary/20 transition-all hover:bg-primary-soft disabled:opacity-70"
+                disabled={loading}
+              >
+                <AnimatePresence mode="wait">
+                  {loading ? (
+                    <motion.div 
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex justify-center"
+                    >
+                      <Loader2 className="animate-spin" size={24} />
+                    </motion.div>
+                  ) : (
+                    <motion.span key="text">Verify & Continue</motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
 
-              {timer === 0 ? (
-                <motion.button
+              <div className="flex flex-col items-center gap-2">
+                <button
                   type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={handleResend}
-                  className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-soft transition-colors"
+                  disabled={!canResend || loading}
+                  className={`
+                    flex items-center gap-2 text-sm font-bold transition-all
+                    ${canResend ? 'text-primary hover:text-primary-soft' : 'text-text-charcoal/30 cursor-not-allowed'}
+                  `}
                 >
-                  <RefreshCcw size={16} />
-                  Resend OTP
-                </motion.button>
-              ) : (
-                <p className="text-xs text-primary/40 text-center font-medium">
-                  Didn't receive the code? You can resend <br />
-                  it after the timer runs out.
-                </p>
-              )}
+                  <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} />
+                  {canResend ? 'Resend Code' : `Resend in ${timer}s`}
+                </button>
+              </div>
             </div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full h-14 bg-gradient-to-r from-primary to-primary-soft text-white font-bold text-lg rounded-2xl shadow-lg shadow-primary/20 disabled:opacity-50"
-              disabled={loading || otp.some(d => !d)}
-            >
-              {loading ? <Loader2 className="animate-spin mx-auto" /> : 'Verify & Continue'}
-            </motion.button>
-            
-            <button 
-              type="button"
-              onClick={() => navigate('/login')}
-              className="w-full flex items-center justify-center gap-2 text-primary/40 hover:text-primary transition-colors text-sm font-semibold"
-            >
-              <ArrowLeft size={16} />
-              Back to Login
-            </button>
           </form>
         </div>
+
+        <p className="mt-8 text-center text-sm text-text-charcoal/30 font-medium">
+          Didn't receive the code? Check your spam folder.
+        </p>
       </motion.div>
     </div>
   );

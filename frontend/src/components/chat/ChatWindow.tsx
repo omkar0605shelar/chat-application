@@ -1,172 +1,415 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Send, Image as ImageIcon, Smile, MoreHorizontal, Phone, Video, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Send, Smile, MoreVertical, 
+  Phone, Video, Search, X, ChevronLeft, Loader2,
+  Paperclip, Mic, Reply, Bot, MessageSquare
+} from 'lucide-react';
 import Avatar from '../ui/Avatar';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { fetchMessages, sendMessageToBackend } from '../../features/chat/chatSlice';
+import EmojiPicker from '../ui/EmojiPicker';
+import { useChatStore } from '../../store/useChatStore';
+import { useCallStore } from '../../store/useCallStore';
+import { useAppSelector } from '../../app/hooks';
+import { chatApi } from '../../api/axios';
+import toast from 'react-hot-toast';
+import type { Message } from '../../types';
 
-const MessageBubble: React.FC<{ message: any; isOwn: boolean }> = ({ message, isOwn }) => {
+const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message, isOwn }) => {
+  const [showReactions, setShowReactions] = useState(false);
+  const { addReaction } = useChatStore();
+  const { user } = useAppSelector((state) => state.auth);
+
+  const handleReaction = (emoji: string) => {
+    if (!user?._id) return;
+    addReaction(message._id, emoji, user._id);
+    setShowReactions(false);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-4 w-full`}
+      className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} mb-6 w-full group relative`}
     >
-      <div className={`max-w-[75%] p-3 px-4 rounded-2xl relative shadow-sm ${
-        isOwn 
-          ? 'bg-[#DCF8C6] text-[#303030] rounded-tr-none border-l-4 border-l-[#7C5CBF]/10' 
-          : 'bg-white border border-primary/5 text-text-charcoal rounded-tl-none'
-      }`}>
-        {message.messageType === 'image' || message.type === 'image' ? (
-          <img src={message.image?.url || message.content} alt="sent image" className="rounded-xl w-full h-auto cursor-pointer border border-white/20" />
-        ) : (
-          <p className="text-sm font-medium leading-relaxed">{message.text || message.content}</p>
+      <div className="flex items-end gap-2 max-w-[80%]">
+        {!isOwn && (
+          <Avatar name="Sender" size="sm" className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
         
-        <div className={`flex items-center gap-1 mt-1 justify-end`}>
-          <span className="text-[9px] text-[#919191] font-bold uppercase">
-            {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:34 PM'}
-          </span>
-          {isOwn && (
-            <span className="text-[#53bdeb] ml-1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17L4 12" />
-                <path d="M16 6L7.5 14.5" />
-              </svg>
-            </span>
+        <div className="relative">
+          <div className={`
+            p-4 rounded-3xl relative shadow-sm transition-all
+            ${isOwn 
+              ? 'bg-primary text-white rounded-tr-none' 
+              : 'bg-white border border-primary/5 text-text-charcoal rounded-tl-none'}
+          `}>
+            {message.type === 'image' ? (
+              <div className="space-y-2">
+                <img 
+                  src={message.image?.url || message.content} 
+                  alt="sent image" 
+                  className="rounded-2xl w-full h-auto cursor-pointer border border-white/20 max-w-[300px] hover:opacity-90 transition-opacity" 
+                />
+                {message.text && <p className="text-sm font-medium leading-relaxed px-1">{message.text}</p>}
+              </div>
+            ) : (
+              <p className="text-sm font-medium leading-relaxed">{message.text || message.content}</p>
+            )}
+            
+            <div className={`flex items-center gap-1.5 mt-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+              <span className={`text-[10px] font-bold uppercase tracking-tighter ${isOwn ? 'text-white/60' : 'text-text-charcoal/30'}`}>
+                {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+              </span>
+              {isOwn && (
+                <div className="flex items-center">
+                  <CheckIcon seen={message.seen} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Reactions Display */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div className={`absolute -bottom-3 ${isOwn ? 'right-0' : 'left-0'} flex -space-x-1`}>
+              {message.reactions.map((r, i) => (
+                <motion.div
+                  key={`${r.emoji}-${i}`}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="bg-white rounded-full px-1.5 py-0.5 text-xs shadow-sm border border-primary/10 flex items-center gap-1"
+                >
+                  {r.emoji}
+                </motion.div>
+              ))}
+            </div>
           )}
         </div>
+
+        {/* Message Actions - Hover only */}
+        <div className={`
+          flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity
+          ${isOwn ? 'flex-row-reverse' : 'flex-row'}
+        `}>
+          <button 
+            onClick={() => setShowReactions(!showReactions)}
+            className="p-2 rounded-xl hover:bg-primary/5 text-primary/40 hover:text-primary transition-all"
+          >
+            <Smile size={18} />
+          </button>
+          <button className="p-2 rounded-xl hover:bg-primary/5 text-primary/40 hover:text-primary transition-all">
+            <Reply size={18} />
+          </button>
+        </div>
       </div>
+
+      {/* Inline Reaction Picker */}
+      <AnimatePresence>
+        {showReactions && (
+          <div className={`absolute z-20 bottom-full mb-2 ${isOwn ? 'right-0' : 'left-0'}`}>
+            <EmojiPicker 
+              isOpen={showReactions} 
+              onClose={() => setShowReactions(false)} 
+              onSelect={handleReaction}
+              className="!relative !bottom-0 !mb-0"
+            />
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
+const CheckIcon = ({ seen }: { seen?: boolean }) => (
+  <div className="flex items-center">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={seen ? "text-white" : "text-white/40"}>
+      <path d="M20 6L9 17L4 12" />
+      {seen && <path d="M16 6L7.5 14.5" className="translate-x-1" />}
+    </svg>
+  </div>
+);
+
 const ChatWindow: React.FC = () => {
   const [input, setInput] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { activeChat, messages } = useAppSelector((state) => state.chat);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { activeChat, messages, setActiveChat, addMessage, setMessages, typingUsers } = useChatStore();
   const { user } = useAppSelector((state) => state.auth);
-  const dispatch = useAppDispatch();
+  const { initiateCall } = useCallStore();
 
+  // Auto scroll to bottom
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
-
-  useEffect(() => {
-    if (activeChat) {
-      dispatch(fetchMessages(activeChat.chat._id));
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [activeChat, dispatch]);
+  }, [messages, typingUsers]);
 
-  const handleSend = () => {
-    if (!input.trim() || !activeChat) return;
-    dispatch(sendMessageToBackend({
-      chatId: activeChat.chat._id,
-      text: input
-    }));
-    setInput('');
+  // Fetch messages when active chat changes
+  useEffect(() => {
+    const fetchMsgs = async () => {
+      if (activeChat) {
+        setLoading(true);
+        try {
+          const res = await chatApi.get(`/message/${activeChat.chat._id}`);
+          setMessages(res.data.messages);
+        } catch (err) {
+          toast.error('Failed to load messages');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchMsgs();
+  }, [activeChat, setMessages]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size too large (max 5MB)');
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleSend = async () => {
+    if ((!input.trim() && !imageFile) || !activeChat) return;
+
+    const formData = new FormData();
+    formData.append('chatId', activeChat.chat._id);
+    if (input.trim()) formData.append('text', input.trim());
+    if (imageFile) formData.append('image', imageFile);
+
+    try {
+      const res = await chatApi.post('/message/send', formData);
+      addMessage(res.data.message);
+      setInput('');
+      setImageFile(null);
+      setImagePreview(null);
+    } catch (error: any) {
+      toast.error('Failed to send message');
+    }
   };
 
   if (!activeChat) {
     return (
-      <div className="flex-1 h-full flex flex-col items-center justify-center bg-bg-soft/50 z-10 transition-all">
+      <div className="flex-1 h-full flex flex-col items-center justify-center bg-bg-soft/30 z-10 p-12 text-center">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
+          className="max-w-md"
         >
-          <div className="w-24 h-24 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-6">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7C5CBF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-20">
-              <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
-            </svg>
+          <div className="w-32 h-32 rounded-[48px] bg-primary/5 flex items-center justify-center mx-auto mb-10 group">
+            <Bot size={64} className="text-primary/20 group-hover:scale-110 group-hover:text-primary/40 transition-all duration-500" />
           </div>
-          <h2 className="text-xl font-bold text-text-charcoal opacity-40">Select a chat to start talking 👋</h2>
-          <p className="text-sm text-primary/30 mt-2 font-medium">Join the vibe with NexTalk</p>
+          <h2 className="text-3xl font-black text-text-charcoal tracking-tight">Your Inbox is Ready</h2>
+          <p className="text-text-charcoal/40 font-medium mt-4 leading-relaxed">
+            Select a conversation from the sidebar to start chatting, or add a new friend to begin your vibe.
+          </p>
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            <div className="px-4 py-2 rounded-full bg-white border border-primary/5 text-xs font-bold text-primary/40 uppercase tracking-widest shadow-sm">
+              End-to-End Encrypted
+            </div>
+            <div className="px-4 py-2 rounded-full bg-white border border-primary/5 text-xs font-bold text-primary/40 uppercase tracking-widest shadow-sm">
+              Real-time Sync
+            </div>
+          </div>
         </motion.div>
       </div>
     );
   }
 
+  const isTyping = (typingUsers[activeChat.chat._id] || []).length > 0;
+
   return (
-    <div className="flex-1 h-full flex flex-col bg-white/30 backdrop-blur-3xl z-10 overflow-hidden">
-      {/* Top Bar */}
-      <div className="h-20 px-8 flex items-center justify-between border-b border-primary/5 bg-white/40 shadow-sm backdrop-blur-md">
+    <div className="flex-1 h-full flex flex-col bg-white relative z-10 overflow-hidden">
+      {/* Chat Header */}
+      <div className="px-6 py-4 flex items-center justify-between glass-dark border-b border-primary/5 z-20">
         <div className="flex items-center gap-4">
-          <Avatar name={activeChat.user.name} src={activeChat.user.avatar} size="md" online={true} />
+          <button 
+            onClick={() => setActiveChat(null)}
+            className="lg:hidden p-2 rounded-xl hover:bg-primary/5 text-text-charcoal/40"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <div className="relative">
+            <Avatar name={activeChat.user.name} src={activeChat.user.avatar?.url} size="md" online={true} />
+          </div>
           <div>
-            <h3 className="text-base font-bold text-text-charcoal leading-none">{activeChat.user.name}</h3>
-            <span className="text-xs text-emerald-400 font-bold mt-1 block">Online</span>
+            <h3 className="text-lg font-black text-text-charcoal tracking-tight">{activeChat.user.name}</h3>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Active Now</p>
+            </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <button className="p-2.5 rounded-full hover:bg-primary/5 text-primary/40 transition-all"><Search size={20} /></button>
-          <button className="p-2.5 rounded-full hover:bg-primary/5 text-primary/40 transition-all"><Phone size={20} /></button>
-          <button className="p-2.5 rounded-full hover:bg-primary/5 text-primary/40 transition-all"><Video size={20} /></button>
-          <button className="p-2.5 rounded-full hover:bg-primary/5 text-primary/40 transition-all ml-2"><MoreHorizontal size={22} /></button>
+          <button className="p-3 rounded-2xl hover:bg-primary/5 text-primary/40 hover:text-primary transition-all">
+            <Search size={20} />
+          </button>
+          <button 
+            onClick={() => initiateCall(activeChat.user, 'audio')}
+            className="p-3 rounded-2xl hover:bg-primary/5 text-primary/40 hover:text-primary transition-all"
+          >
+            <Phone size={20} />
+          </button>
+          <button 
+            onClick={() => initiateCall(activeChat.user, 'video')}
+            className="p-3 rounded-2xl hover:bg-primary/5 text-primary/40 hover:text-primary transition-all"
+          >
+            <Video size={20} />
+          </button>
+          <button className="p-3 rounded-2xl hover:bg-primary/5 text-primary/40 hover:text-primary transition-all">
+            <MoreVertical size={20} />
+          </button>
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages Area */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-transparent"
+        className="flex-1 overflow-y-auto px-6 py-8 space-y-2 custom-scrollbar bg-bg-soft/20"
       >
-        <div className="flex flex-col py-4">
-          {messages.length === 0 ? (
-            <div className="text-center my-10">
-              <p className="text-sm text-primary/30 font-medium">Start the conversation with {activeChat.user.name} ✨</p>
+        {loading ? (
+          <div className="h-full flex flex-col items-center justify-center gap-4">
+            <Loader2 size={32} className="text-primary animate-spin" />
+            <p className="text-sm font-bold text-primary/30 uppercase tracking-widest">Loading Conversation...</p>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center p-12">
+            <div className="w-20 h-20 rounded-[32px] bg-primary/5 flex items-center justify-center mb-6">
+              <MessageSquare size={32} className="text-primary/20" />
             </div>
-          ) : (
-            <div className="text-center mb-8">
-              <span className="px-4 py-1.5 rounded-full bg-white/60 border border-primary/5 text-[10px] font-bold text-primary/30 uppercase tracking-widest backdrop-blur-sm">Messages</span>
+            <p className="text-text-charcoal/40 font-bold">No messages yet. Say hello!</p>
+          </div>
+        ) : (
+          messages.map((msg, idx) => {
+            const prevMsg = messages[idx - 1];
+            const showDate = !prevMsg || new Date(msg.createdAt).toDateString() !== new Date(prevMsg.createdAt).toDateString();
+            
+            return (
+              <React.Fragment key={msg._id}>
+                {showDate && (
+                  <div className="flex justify-center my-8">
+                    <span className="px-4 py-1.5 rounded-full bg-white border border-primary/5 text-[10px] font-black text-primary/40 uppercase tracking-widest shadow-sm">
+                      {new Date(msg.createdAt).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                )}
+                <MessageBubble message={msg} isOwn={msg.sender === user?._id} />
+              </React.Fragment>
+            );
+          })
+        )}
+        
+        {isTyping && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 p-3 rounded-2xl bg-white/50 border border-primary/5 w-fit"
+          >
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:0.2s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:0.4s]" />
             </div>
-          )}
-          
-          {messages.map(msg => (
-            <MessageBubble key={msg._id || msg.id} isOwn={msg.sender === user?._id} message={msg} />
-          ))}
-        </div>
+            <p className="text-[10px] font-bold text-primary/40 uppercase tracking-widest">Typing...</p>
+          </motion.div>
+        )}
       </div>
 
-      {/* Message Input */}
-      <div className="p-6 pt-2 pb-8 bg-white/40 backdrop-blur-xl">
-        <div className="max-w-4xl mx-auto relative group">
-          <div className="glass rounded-[24px] p-2 pr-3 flex items-center gap-2 shadow-2xl border-white/60 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
-            <div className="flex gap-1 ml-1">
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                className="p-3 text-accent-coral hover:bg-accent-coral/10 rounded-2xl transition-all"
-              >
-                <ImageIcon size={22} />
-              </motion.button>
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                className="p-3 text-primary/60 hover:bg-primary/10 rounded-2xl transition-all"
-              >
-                <Smile size={22} />
-              </motion.button>
-            </div>
-            
-            <input 
-              type="text" 
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              className="flex-1 bg-transparent border-0 ring-0 focus:ring-0 text-sm font-medium py-3 px-2 text-text-charcoal placeholder:text-primary/20"
-            />
-
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleSend}
-              disabled={!input.trim()}
-              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary-soft text-white flex items-center justify-center shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all disabled:opacity-50 disabled:shadow-none"
+      {/* Input Area */}
+      <div className="p-6 pt-0 z-20">
+        <AnimatePresence>
+          {imagePreview && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="p-4 glass rounded-3xl mb-4 flex items-center gap-4 relative"
             >
-              <Send size={18} />
-            </motion.button>
+              <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-primary/10">
+                <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-text-charcoal">{imageFile?.name}</p>
+                <p className="text-xs text-text-charcoal/40">{(imageFile!.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+              <button 
+                onClick={() => { setImageFile(null); setImagePreview(null); }}
+                className="p-2 rounded-xl hover:bg-accent-coral/10 text-accent-coral transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="relative glass p-2 rounded-[32px] flex items-center gap-2 border border-primary/10 shadow-2xl">
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className={`p-3 rounded-2xl transition-all ${showEmojiPicker ? 'bg-primary text-white' : 'text-primary/40 hover:bg-primary/5 hover:text-primary'}`}
+            >
+              <Smile size={24} />
+            </button>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="p-3 rounded-2xl text-primary/40 hover:bg-primary/5 hover:text-primary transition-all"
+            >
+              <Paperclip size={24} />
+            </button>
           </div>
+
+          <input 
+            type="text"
+            placeholder="Type a message..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            className="flex-1 h-12 bg-transparent border-0 text-sm font-medium text-text-charcoal placeholder:text-primary/20 focus:ring-0"
+          />
+
+          <button className="p-3 rounded-2xl text-primary/40 hover:bg-primary/5 hover:text-primary transition-all">
+            <Mic size={24} />
+          </button>
+
+          <button 
+            onClick={handleSend}
+            disabled={!input.trim() && !imageFile}
+            className={`
+              w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg
+              ${(input.trim() || imageFile) ? 'bg-primary text-white shadow-primary/20 scale-105 active:scale-95' : 'bg-primary/5 text-primary/20'}
+            `}
+          >
+            <Send size={24} />
+          </button>
+
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImageChange} 
+            accept="image/*" 
+            className="hidden" 
+          />
+
+          <EmojiPicker 
+            isOpen={showEmojiPicker} 
+            onClose={() => setShowEmojiPicker(false)} 
+            onSelect={(emoji) => setInput(prev => prev + emoji)} 
+          />
         </div>
       </div>
     </div>

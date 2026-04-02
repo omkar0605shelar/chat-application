@@ -31,7 +31,7 @@ interface ChatListItem {
     _id: string;
     name: string;
     email: string;
-    avatar?: string;
+    avatar?: { url: string; publicId: string };
   };
   chat: Chat;
 }
@@ -103,9 +103,13 @@ export const fetchMessages = createAsyncThunk(
 
 export const sendMessageToBackend = createAsyncThunk(
   'chat/sendMessageToBackend',
-  async ({ chatId, text }: { chatId: string, text: string }, { rejectWithValue }) => {
+  async (formData: FormData, { rejectWithValue }) => {
     try {
-      const res = await chatApi.post('/message', { chatId, text });
+      const res = await chatApi.post('/message', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return res.data.message;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to send message');

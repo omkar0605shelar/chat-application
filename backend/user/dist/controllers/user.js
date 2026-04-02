@@ -1,6 +1,8 @@
 import { generateToken } from "../config/generateToken.js";
 import { publishToQueue } from "../config/rabbitmq.js";
 import TryCatch from "../config/TryCatch.js";
+import cloudinary from "../config/cloudinary.js";
+import { uploadToCloudinary } from "../config/cloudinary.js";
 import { redisClient } from "../index.js";
 import { User } from '../model/User.js';
 export const loginUser = TryCatch(async (req, res) => {
@@ -66,18 +68,49 @@ export const myProfile = TryCatch(async (req, res) => {
     const user = req.user;
     res.json(user);
 });
-export const updateName = TryCatch(async (req, res) => {
+export const updateProfile = TryCatch(async (req, res) => {
     const user = await User.findById(req.user?._id);
     if (!user) {
         return res.status(404).json({
             message: "Please login."
         });
     }
-    user.name = req.body.name;
+    if (req.body.name)
+        user.name = req.body.name;
+    const file = req.file;
+    if (file) {
+        try {
+            const uploaded = await uploadToCloudinary(file.buffer);
+            const previousPublicId = user.avatar?.publicId;
+            user.avatar = {
+                publicId: uploaded.publicId,
+                url: uploaded.url,
+            };
+            if (previousPublicId) {
+                try {
+                    await cloudinary.uploader.destroy(previousPublicId);
+                }
+                catch {
+                    // Keep profile update successful even if old image cleanup fails.
+                }
+            }
+        }
+        catch (error) {
+            const message = String(error?.message || "");
+            if (message.toLowerCase().includes("invalid signature")) {
+                return res.status(500).json({
+                    message: "Cloudinary credentials are invalid. Please verify CLOUDINARY_API_SECRET.",
+                });
+            }
+            return res.status(500).json({
+                message: "Failed to upload profile image. Please try again.",
+            });
+        }
+    }
     await user.save();
     const token = generateToken(user);
     res.json({
-        message: "User updated.",
+        message: "Profile updated.",
         user,
         token
     });
