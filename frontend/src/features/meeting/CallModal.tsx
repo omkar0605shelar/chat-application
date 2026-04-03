@@ -58,7 +58,7 @@ const CallModal: React.FC = () => {
                 <PhoneOff size={24} />
               </button>
               <button 
-                className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xl shadow-emerald-500/20 hover:scale-110 transition-transform"
+                className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/25 hover:scale-110 transition-transform hover:bg-primary-soft"
               >
                 <Phone size={24} />
               </button>

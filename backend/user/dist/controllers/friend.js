@@ -197,7 +197,7 @@ export const getMyFriends = TryCatch(async (req, res) => {
         return res.status(404).json({ success: false, message: "User not found" });
     // Map to normalized friend format with online status
     const formattedFriends = user.friends.map((f) => ({
-        id: f._id.toString(),
+        _id: f._id.toString(),
         name: f.name,
         email: f.email,
         avatar: f.avatar,

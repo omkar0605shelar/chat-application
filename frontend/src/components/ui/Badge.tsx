@@ -12,7 +12,7 @@ const Badge: React.FC<BadgeProps> = ({ count, className = '', variant = 'danger'
 
   const variants = {
     danger: 'bg-red-500 text-white',
-    success: 'bg-emerald-500 text-white',
+    success: 'bg-positive text-white',
     primary: 'bg-primary text-white',
   };
 

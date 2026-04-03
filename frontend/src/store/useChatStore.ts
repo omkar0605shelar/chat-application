@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import type { ChatListItem, Message } from '../types';
+import { create } from "zustand";
+import type { ChatListItem, Message } from "../types";
 
 interface ChatState {
   chats: ChatListItem[];
@@ -8,7 +8,7 @@ interface ChatState {
   loading: boolean;
   typingUsers: { [chatId: string]: string[] };
   onlineUsers: string[];
-  
+
   setChats: (chats: ChatListItem[]) => void;
   setActiveChat: (chat: ChatListItem | null) => void;
   setMessages: (messages: Message[]) => void;
@@ -32,37 +32,51 @@ export const useChatStore = create<ChatState>((set) => ({
   setChats: (chats) => set({ chats }),
   setActiveChat: (activeChat) => set({ activeChat }),
   setMessages: (messages) => set({ messages }),
-  addMessage: (message) => set((state) => ({ 
-    messages: [...state.messages, message] 
-  })),
-  updateMessage: (message) => set((state) => ({
-    messages: state.messages.map((m) => m._id === message._id ? message : m)
-  })),
+  addMessage: (message) =>
+    set((state) => ({
+      messages: [...state.messages, message],
+    })),
+  updateMessage: (message) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m._id === message._id ? message : m,
+      ),
+    })),
   setLoading: (loading) => set({ loading }),
-  setTyping: (chatId, userId, isTyping) => set((state) => {
-    const currentTyping = state.typingUsers[chatId] || [];
-    const newTyping = isTyping 
-      ? [...new Set([...currentTyping, userId])]
-      : currentTyping.filter((id) => id !== userId);
-    return {
-      typingUsers: { ...state.typingUsers, [chatId]: newTyping }
-    };
-  }),
-  setOnlineUsers: (onlineUsers) => set({ onlineUsers }),
-  markMessagesAsSeen: (chatId) => set((state) => ({
-    messages: state.messages.map((m) => m.chatId === chatId ? { ...m, seen: true } : m)
-  })),
-  addReaction: (messageId, emoji, userId) => set((state) => ({
-    messages: state.messages.map((m) => {
-      if (m._id !== messageId) return m;
-      const reactions = m.reactions || [];
-      const existingReaction = reactions.find((r) => r.userId === userId && r.emoji === emoji);
-      if (existingReaction) return m; // Already reacted with this emoji
-      
+  setTyping: (chatId, userId, isTyping) =>
+    set((state) => {
+      const currentTyping = state.typingUsers[chatId] || [];
+      const newTyping = isTyping
+        ? [...new Set([...currentTyping, userId])]
+        : currentTyping.filter((id) => id !== userId);
       return {
-        ...m,
-        reactions: [...reactions.filter((r) => r.userId !== userId), { emoji, userId }]
+        typingUsers: { ...state.typingUsers, [chatId]: newTyping },
       };
-    })
-  })),
+    }),
+  setOnlineUsers: (onlineUsers) => set({ onlineUsers }),
+  markMessagesAsSeen: (chatId) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.chatId === chatId ? { ...m, seen: true } : m,
+      ),
+    })),
+  addReaction: (messageId, emoji, userId) =>
+    set((state) => ({
+      messages: state.messages.map((m) => {
+        if (m._id !== messageId) return m;
+        const reactions = m.reactions || [];
+        const existingReaction = reactions.find(
+          (r) => r.userId === userId && r.emoji === emoji,
+        );
+        if (existingReaction) return m; // Already reacted with this emoji
+
+        return {
+          ...m,
+          reactions: [
+            ...reactions.filter((r) => r.userId !== userId),
+            { emoji, userId },
+          ],
+        };
+      }),
+    })),
 }));

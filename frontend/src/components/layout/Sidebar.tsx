@@ -81,17 +81,18 @@ const Sidebar: React.FC = () => {
   );
 
   const filteredFriends = friends.filter(f => 
-    f.name.toLowerCase().includes(search.toLowerCase())
+    (f.name || f._id || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="h-full flex bg-white/40 backdrop-blur-3xl border-r border-primary/5 z-20 overflow-hidden">
+    <div className="h-full flex bg-white/50 backdrop-blur-3xl border-r border-primary/12 z-20 overflow-hidden">
       {/* Left Icon Rail */}
-      <div className="w-20 h-full flex flex-col items-center py-8 bg-white/40 border-r border-primary/5">
+      <div className="w-20 h-full flex flex-col items-center py-8 bg-white/45 border-r border-primary/12">
         <Logo size={32} showText={false} className="mb-10" />
         
         <div className="flex-1 flex flex-col gap-6">
           <RailIcon 
+            key="rail-messages"
             icon={MessageSquare} 
             active={activeTab === 'chats' && !location.pathname.startsWith('/ai-assistant')} 
             onClick={() => {
@@ -101,6 +102,7 @@ const Sidebar: React.FC = () => {
             badge={chats.reduce((acc, c) => acc + (c.chat.unseenCount || 0), 0)}
           />
           <RailIcon 
+            key="rail-friends"
             icon={Users} 
             active={activeTab === 'friends' || activeTab === 'add' || location.pathname === '/friends'} 
             onClick={() => {
@@ -110,13 +112,14 @@ const Sidebar: React.FC = () => {
             badge={pendingRequests.length}
           />
           <RailIcon 
+            key="rail-ai"
             icon={Bot} 
             active={location.pathname === '/ai-assistant'} 
             onClick={() => {
               navigate('/ai-assistant');
             }} 
           />
-          <NotificationCenter />
+          <NotificationCenter key="rail-notifications" />
         </div>
 
         <div className="flex flex-col gap-6 mt-auto">
@@ -134,6 +137,7 @@ const Sidebar: React.FC = () => {
           </button>
           <div className="relative pt-4">
             <Avatar 
+              key={user?.avatar?.url || 'no-avatar'}
               src={user?.avatar?.url} 
               name={user?.name} 
               size="md" 
@@ -199,7 +203,7 @@ const Sidebar: React.FC = () => {
                 className="space-y-1"
               >
                 {filteredChats.length === 0 ? (
-                  <div className="py-12 flex flex-col items-center justify-center text-center px-6">
+                  <div key="empty-chats" className="py-12 flex flex-col items-center justify-center text-center px-6">
                     <div className="w-16 h-16 rounded-[24px] bg-primary/5 flex items-center justify-center mb-4">
                       <MessageSquare size={24} className="text-primary/20" />
                     </div>
@@ -231,7 +235,7 @@ const Sidebar: React.FC = () => {
                 className="space-y-1"
               >
                 {filteredFriends.length === 0 ? (
-                  <div className="py-12 flex flex-col items-center justify-center text-center px-6">
+                  <div key="empty-friends" className="py-12 flex flex-col items-center justify-center text-center px-6">
                     <div className="w-16 h-16 rounded-[24px] bg-primary/5 flex items-center justify-center mb-4">
                       <Users size={24} className="text-primary/20" />
                     </div>
@@ -261,8 +265,8 @@ const Sidebar: React.FC = () => {
                 className="p-2 space-y-6"
               >
                 {/* Section 1: Generate Code */}
-                <div className="p-6 rounded-[32px] bg-emerald-500/5 border border-emerald-500/10 space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <div className="p-6 rounded-[32px] bg-primary/5 border border-primary/15 space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                     <QrCode size={24} />
                   </div>
                   <div>
@@ -274,21 +278,21 @@ const Sidebar: React.FC = () => {
                   
                   {generatedOtp ? (
                     <div className="flex flex-col gap-3">
-                      <div className="bg-white border-2 border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                        <span className="text-2xl font-black tracking-[0.2em] text-emerald-600">{generatedOtp}</span>
+                      <div className="bg-white border-2 border-primary/20 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                        <span className="text-2xl font-black tracking-[0.2em] text-primary">{generatedOtp}</span>
                         <button 
                           onClick={() => {
                             navigator.clipboard.writeText(generatedOtp);
                             toast.success('Copied to clipboard!');
                           }}
-                          className="p-2 rounded-xl hover:bg-emerald-50 text-emerald-500 transition-colors"
+                          className="p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors"
                         >
                           <Clipboard size={20} />
                         </button>
                       </div>
                       <button 
                         onClick={handleGenerateOtp}
-                        className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center justify-center gap-2 hover:underline"
+                        className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center justify-center gap-2 hover:underline"
                       >
                         <RefreshCw size={12} /> Generate New Code
                       </button>
@@ -297,7 +301,7 @@ const Sidebar: React.FC = () => {
                     <button 
                       onClick={handleGenerateOtp}
                       disabled={generating}
-                      className="w-full h-12 rounded-2xl bg-emerald-500 text-white font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all disabled:opacity-50 shadow-lg shadow-emerald-500/20"
+                      className="w-full h-12 rounded-2xl bg-primary text-white font-bold flex items-center justify-center gap-2 hover:bg-primary-soft transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
                     >
                       {generating ? <Loader2 size={18} className="animate-spin" /> : 'Generate My Code'}
                     </button>

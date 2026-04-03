@@ -80,62 +80,64 @@ const ChatLayout: React.FC = () => {
   const isAIPage = location.pathname === '/ai-assistant';
 
   return (
-    <div className="h-screen w-full flex bg-bg-soft overflow-hidden font-sans relative">
-      {/* Background Decorative Blobs */}
-      <div className="absolute top-0 right-0 w-[40vw] h-[40vh] bg-primary/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[30vw] h-[30vh] bg-accent-coral/5 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-      
-      <Sidebar />
-      
-      <main className="flex-1 h-full overflow-hidden relative">
-        <AnimatePresence mode="wait">
-          {isFriendsPage ? (
-            <motion.div 
-              key="friends-page"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full flex flex-col items-center justify-center p-12 bg-white/20"
-            >
-              <div className="max-w-md text-center">
-                <div className="w-24 h-24 rounded-[32px] bg-primary/10 flex items-center justify-center mx-auto mb-8">
-                  <Users size={48} className="text-primary" />
+    <>
+      <div className="h-screen w-full flex bg-bg-soft overflow-hidden font-sans relative">
+        {/* Background Decorative Blobs */}
+        <div className="absolute top-0 right-0 w-[40vw] h-[40vh] bg-primary/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[30vw] h-[30vh] bg-accent-indigo/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+        
+        <Sidebar />
+        
+        <main className="flex-1 h-full overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            {isFriendsPage ? (
+              <motion.div 
+                key="friends-page"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="h-full flex flex-col items-center justify-center p-12 bg-white/20"
+              >
+                <div className="max-w-md text-center">
+                  <div className="w-24 h-24 rounded-[32px] bg-primary/10 flex items-center justify-center mx-auto mb-8">
+                    <Users size={48} className="text-primary" />
+                  </div>
+                  <h2 className="text-3xl font-black text-text-charcoal tracking-tight">Your NexTalk Squad</h2>
+                  <p className="text-text-charcoal/40 font-medium mt-4">Select a friend from the list to start a vibe or add new friends via code.</p>
                 </div>
-                <h2 className="text-3xl font-black text-text-charcoal tracking-tight">Your NexTalk Squad</h2>
-                <p className="text-text-charcoal/40 font-medium mt-4">Select a friend from the list to start a vibe or add new friends via code.</p>
-              </div>
-            </motion.div>
-          ) : isAIPage ? (
-            <motion.div 
-              key="ai-page"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="h-full flex flex-col items-center justify-center p-12 bg-white/20"
-            >
-              <div className="max-w-md text-center w-full">
-                <h2 className="text-3xl font-black text-text-charcoal tracking-tight">AI Assistant</h2>
-                <p className="text-text-charcoal/40 font-medium mt-4 mb-8">Ask me anything. I'm here to help you navigate NexTalk and more.</p>
-                <AIPanel inline={true} />
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="chat-window"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <ChatWindow />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+              </motion.div>
+            ) : isAIPage ? (
+              <motion.div 
+                key="ai-page"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="h-full flex flex-col items-center justify-center p-12 bg-white/20"
+              >
+                <div className="max-w-md text-center w-full">
+                  <h2 className="text-3xl font-black text-text-charcoal tracking-tight">AI Assistant</h2>
+                  <p className="text-text-charcoal/40 font-medium mt-4 mb-8">Ask me anything. I'm here to help you navigate NexTalk and more.</p>
+                  <AIPanel inline={true} />
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="chat-window"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full"
+              >
+                <ChatWindow />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
 
+        <CallModal />
+      </div>
       {!isAIPage && <AIPanel />}
-      <CallModal />
-    </div>
+    </>
   );
 };
 

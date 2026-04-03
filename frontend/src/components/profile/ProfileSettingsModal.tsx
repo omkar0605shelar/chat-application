@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, User, Mail, Shield, Bell, 
@@ -6,6 +6,7 @@ import {
   Check, Loader2, Key
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../app/hooks';
+import { updateProfile } from '../../features/auth/authSlice';
 import Avatar from '../ui/Avatar';
 import Modal from '../ui/Modal';
 import toast from 'react-hot-toast';
@@ -17,16 +18,61 @@ interface ProfileSettingsModalProps {
 
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onClose }) => {
   const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'privacy'>('profile');
+  const [name, setName] = useState(user?.name || '');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size too large (max 5MB)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => setPreviewImage(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const handleSaveProfile = async () => {
     setLoading(true);
-    // Stub for updating profile
-    setTimeout(() => {
-      setLoading(false);
+    
+    const formData = new FormData();
+    if (name !== user?.name) {
+      formData.append('name', name);
+    }
+    
+    const file = fileInputRef.current?.files?.[0];
+    console.log('Frontend - Selected file:', file ? { name: file.name, size: file.size, type: file.type } : 'No file');
+    
+    if (file) {
+      formData.append('file', file);
+    }
+    
+    // Log FormData contents
+    for (let [key, value] of formData.entries()) {
+      console.log('Frontend - FormData:', key, value instanceof File ? `File: ${value.name}` : value);
+    }
+
+    try {
+      await dispatch(updateProfile(formData)).unwrap();
       toast.success('Profile updated successfully!');
-    }, 1000);
+      setPreviewImage(null);
+      onClose();
+    } catch (error: any) {
+      toast.error(error || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,9 +118,10 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
               >
                 {/* Avatar Section */}
                 <div className="flex items-center gap-6">
-                  <div className="relative group">
+                  <div className="relative group cursor-pointer" onClick={handleImageClick}>
                     <Avatar 
-                      src={user?.avatar?.url} 
+                      key={previewImage || user?.avatar?.url || 'no-avatar'}
+                      src={previewImage || user?.avatar?.url} 
                       name={user?.name} 
                       size="xl" 
                       className="ring-4 ring-primary/10"
@@ -82,6 +129,13 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                     <button className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                       <Camera size={24} className="text-white" />
                     </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </div>
                   <div>
                     <h4 className="font-bold text-text-charcoal text-xl">{user?.name}</h4>
@@ -95,7 +149,8 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                     <label className="text-xs font-bold text-primary uppercase tracking-widest">Full Name</label>
                     <input 
                       type="text" 
-                      defaultValue={user?.name}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       className="w-full h-12 bg-primary/5 border-0 rounded-2xl px-4 text-sm font-medium text-text-charcoal focus:ring-4 focus:ring-primary/5 transition-all"
                     />
                   </div>

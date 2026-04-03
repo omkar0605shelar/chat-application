@@ -102,6 +102,8 @@ export const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         localStorage.setItem('token', action.payload.token);
+        console.log('Redux - Updated user:', action.payload.user);
+        console.log('Redux - User avatar:', action.payload.user?.avatar);
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.loading = false;

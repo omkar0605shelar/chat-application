@@ -17,12 +17,14 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose, isOpen, cl
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <React.Fragment key="emoji-picker-wrapper">
           <div 
+            key="emoji-picker-overlay"
             className="fixed inset-0 z-40 bg-transparent" 
             onClick={onClose} 
           />
           <motion.div
+            key="emoji-picker-panel"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -48,7 +50,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onSelect, onClose, isOpen, cl
               </motion.button>
             ))}
           </motion.div>
-        </>
+        </React.Fragment>
       )}
     </AnimatePresence>
   );

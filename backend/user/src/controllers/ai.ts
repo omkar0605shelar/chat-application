@@ -4,7 +4,7 @@ import type { AuthenticatedRequest } from "../middleware/isAuth.js";
 
 const DEFAULT_NVIDIA_URL =
   "https://integrate.api.nvidia.com/v1/chat/completions";
-const DEFAULT_MODEL = "google/gemma-3-27b-it";
+const DEFAULT_MODEL = "google/gemma-2-9b-it";
 
 type ChatMessage = { role: string; content: string };
 

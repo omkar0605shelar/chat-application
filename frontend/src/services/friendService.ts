@@ -8,8 +8,33 @@ export const friendService = {
   },
 
   getFriends: async () => {
-    const res = await userApi.get("/friends/my");
-    return res.data.data;
+    try {
+      const res = await userApi.get("/friends");
+      // Handle different possible response formats
+      return (
+        res.data.data ||
+        res.data.friends ||
+        (Array.isArray(res.data) ? res.data : [])
+      );
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        try {
+          const res = await userApi.get("/friends/my");
+          return (
+            res.data.data ||
+            res.data.friends ||
+            (Array.isArray(res.data) ? res.data : [])
+          );
+        } catch (innerError: any) {
+          if (innerError.response?.status === 404) {
+            console.warn("Friends endpoint not found, returning empty list");
+            return [];
+          }
+          throw innerError;
+        }
+      }
+      throw error;
+    }
   },
 
   getPendingRequests: async () => {

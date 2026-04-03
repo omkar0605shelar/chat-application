@@ -171,7 +171,7 @@ const FriendOtpModal: React.FC<FriendOtpModalProps> = ({ isOpen, onClose }) => {
                       <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary/20 hover:border-primary/40 hover:from-primary/15 transition-all p-6 rounded-3xl flex items-center justify-center gap-4 group">
                         <span className="text-5xl font-black tracking-[0.2em] text-primary">{otpCode || '-----'}</span>
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -right-12">
-                           {copied ? <Check className="text-emerald-400" /> : <Copy className="text-primary/40" />}
+                           {copied ? <Check className="text-positive" /> : <Copy className="text-primary/40" />}
                         </div>
                       </div>
                     )}

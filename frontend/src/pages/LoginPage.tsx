@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
             rotate: [0, 90, 0],
           }}
           transition={{ duration: 20, repeat: Infinity }}
-          className="absolute -top-20 -left-20 w-96 h-96 bg-primary-soft/30 blur-[100px] rounded-full"
+          className="absolute -top-20 -left-20 w-96 h-96 bg-primary-soft/40 blur-[100px] rounded-full"
         />
         <motion.div 
           animate={{
@@ -66,7 +66,7 @@ const LoginPage: React.FC = () => {
             x: [0, 50, 0],
           }}
           transition={{ duration: 15, repeat: Infinity }}
-          className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-accent-coral/20 blur-[120px] rounded-full"
+          className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-accent-indigo/30 blur-[120px] rounded-full"
         />
 
         <div className="relative z-10 w-full max-w-lg">
@@ -75,7 +75,7 @@ const LoginPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-12"
           >
-            <Logo size={80} showText={true} color="white" />
+            <Logo size={80} showText variant="onDark" color="white" />
             <h1 className="text-6xl font-black text-white mt-8 tracking-tighter leading-none">
               Connect <br /> Beyond <br /> Limits.
             </h1>

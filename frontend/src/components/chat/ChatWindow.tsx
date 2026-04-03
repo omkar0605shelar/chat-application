@@ -43,7 +43,7 @@ const MessageBubble: React.FC<{ message: Message; isOwn: boolean }> = ({ message
               ? 'bg-primary text-white rounded-tr-none' 
               : 'bg-white border border-primary/5 text-text-charcoal rounded-tl-none'}
           `}>
-            {message.type === 'image' ? (
+            {message.messageType === 'image' || message.type === 'image' ? (
               <div className="space-y-2">
                 <img 
                   src={message.image?.url || message.content} 
@@ -192,7 +192,7 @@ const ChatWindow: React.FC = () => {
     if (imageFile) formData.append('image', imageFile);
 
     try {
-      const res = await chatApi.post('/message/send', formData);
+      const res = await chatApi.post('/message', formData);
       addMessage(res.data.message);
       setInput('');
       setImageFile(null);
@@ -235,7 +235,7 @@ const ChatWindow: React.FC = () => {
   return (
     <div className="flex-1 h-full flex flex-col bg-white relative z-10 overflow-hidden">
       {/* Chat Header */}
-      <div className="px-6 py-4 flex items-center justify-between glass-dark border-b border-primary/5 z-20">
+      <div className="px-6 py-4 flex items-center justify-between glass-dark border-b border-primary/12 z-20">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setActiveChat(null)}
@@ -249,8 +249,8 @@ const ChatWindow: React.FC = () => {
           <div>
             <h3 className="text-lg font-black text-text-charcoal tracking-tight">{activeChat.user.name}</h3>
             <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Active Now</p>
+              <div className="w-1.5 h-1.5 rounded-full bg-online shadow-sm shadow-online/40" />
+              <p className="text-[10px] font-bold text-online uppercase tracking-widest">Active Now</p>
             </div>
           </div>
         </div>

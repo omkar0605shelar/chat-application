@@ -25,9 +25,14 @@ const NotificationCenter: React.FC = () => {
 
       <AnimatePresence>
         {isOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <React.Fragment key="notification-wrapper">
+            <div 
+              key="notification-overlay"
+              className="fixed inset-0 z-40" 
+              onClick={() => setIsOpen(false)} 
+            />
             <motion.div
+              key="notification-panel"
               initial={{ opacity: 0, scale: 0.95, y: 10, x: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10, x: 10 }}
@@ -70,7 +75,7 @@ const NotificationCenter: React.FC = () => {
                       <div className={`
                         w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0
                         ${n.type === 'message' ? 'bg-primary/10 text-primary' : 
-                          n.type === 'friend-request' ? 'bg-emerald-500/10 text-emerald-500' : 
+                          n.type === 'friend-request' ? 'bg-accent-blush/50 text-accent-coral' : 
                           'bg-accent-coral/10 text-accent-coral'}
                       `}>
                         {n.type === 'message' ? <MessageSquare size={18} /> : 
@@ -111,7 +116,7 @@ const NotificationCenter: React.FC = () => {
                 </div>
               )}
             </motion.div>
-          </>
+          </React.Fragment>
         )}
       </AnimatePresence>
     </div>

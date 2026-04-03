@@ -1,15 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #7C5CBF;
-  --color-primary-soft: #9B7FD4;
-  --color-accent-coral: #F87171;
-  --color-accent-mint: #6EE7B7;
-  --color-bg-soft: #F9F7FF;
-  --color-bg-lavender: #F3EEFF;
-  --color-text-charcoal: #2D2640;
-  --color-emerald: #34D399;
-  --color-border-glow: rgba(124,92,191,0.15);
+  /* Interactive Sky palette — faint blue backgrounds, vibrant sky accents */
+  --color-primary: #3B82F6; /* Vibrant Blue */
+  --color-primary-soft: #93C5FD; /* Soft Blue */
+  --color-primary-ring: rgba(59, 130, 246, 0.35);
+  --color-accent-indigo: #6366F1;
+  --color-accent-cyan: #22D3EE;
+  --color-accent-violet: #8B5CF6;
+  --color-bg-soft: #F0F9FF; /* Faint Blue (Sky 50) */
+  --color-bg-lavender: #F5F3FF;
+  --color-text-charcoal: #1E293B; /* Deep Slate Blue */
+  --color-text-muted: #64748B;
+  --color-online: #10B981; /* Emerald for online */
+  --color-positive: #0EA5E9; /* Cyan Blue */
+  --color-positive-foreground: #075985;
+  --color-border-subtle: rgba(59, 130, 246, 0.18);
+  --color-border-glow: rgba(59, 130, 246, 0.12);
   
   --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui;
   
@@ -53,16 +60,16 @@
 
 @layer utilities {
   .glass {
-    @apply backdrop-blur-md bg-white/60 border border-purple-100/50;
-    box-shadow: 0 8px 32px 0 rgba(124, 92, 191, 0.08);
+    @apply backdrop-blur-md bg-white/70 border border-primary/15;
+    box-shadow: 0 8px 32px 0 var(--color-border-glow);
   }
   
   .glass-dark {
-    @apply backdrop-blur-lg bg-white/40 border border-white/20;
+    @apply backdrop-blur-lg bg-white/45 border border-primary/12;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent-coral;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent-indigo;
   }
 
   /* Custom Scrollbar */
@@ -73,6 +80,6 @@
     @apply bg-transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-primary/20 rounded-full hover:bg-primary/40 transition-colors;
+    @apply bg-primary/25 rounded-full hover:bg-primary/45 transition-colors;
   }
 }
