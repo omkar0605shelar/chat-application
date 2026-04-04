@@ -13,7 +13,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:5173", "https://your-vercel-app.vercel.app"],
+    origin: ["http://localhost:5173", "https://nextalkchatapp.onrender.com"],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -22,7 +22,7 @@ const io = new Server(httpServer, {
 const port = process.env.PORT || 5002;
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://your-vercel-app.vercel.app"],
+  origin: ["http://localhost:5173", "https://nextalkchatapp.onrender.com"],
   credentials: true
 }));
 app.use(express.json());
