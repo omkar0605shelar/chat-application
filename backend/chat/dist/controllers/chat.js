@@ -178,6 +178,10 @@ export const markAsRead = TryCatch(async (req, res) => {
         res.status(401).json({ message: "Unauthorized." });
         return;
     }
+    if (!chatId || Array.isArray(chatId)) {
+        res.status(400).json({ message: "Invalid chat ID." });
+        return;
+    }
     const chat = await Chat.findById(chatId);
     if (!chat) {
         res.status(404).json({ message: "Chat not found." });
