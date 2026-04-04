@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, Users, MessageSquare, Settings, LogOut, 
-  Plus, UserPlus, Bell, Bot, Send, Loader2, Check,
+  Plus, UserPlus, Bot, Loader2, Check,
   QrCode, Clipboard, RefreshCw
 } from 'lucide-react';
 import Logo from '../ui/Logo';
@@ -38,7 +38,7 @@ const Sidebar: React.FC = () => {
   
   const { chats, activeChat, setActiveChat, onlineUsers } = useChatStore();
   const { friends, setFriends, pendingRequests } = useFriendStore();
-  const { notifications } = useNotificationStore();
+  useNotificationStore();
 
   const handleLogout = () => {
     dispatch(logout());

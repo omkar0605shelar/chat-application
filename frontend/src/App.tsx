@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Users, Bot, MessageSquare } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import store from './app/store';
 import LoginPage from './pages/LoginPage';
 import VerifyOtpPage from './pages/VerifyOtpPage';
@@ -23,7 +23,7 @@ import Logo from './components/ui/Logo';
 const ChatLayout: React.FC = () => {
   const { isAuthenticated, isInitialized } = useAppSelector((state) => state.auth);
   const { chats, activeChat, setChats, setActiveChat } = useChatStore();
-  const { friends, setFriends } = useFriendStore();
+  const { setFriends } = useFriendStore();
   const { id } = useParams();
   const location = useLocation();
   useSocket();

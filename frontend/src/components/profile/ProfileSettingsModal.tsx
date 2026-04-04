@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, User, Mail, Shield, Bell, 
-  Moon, Sun, Globe, LogOut, Camera, 
-  Check, Loader2, Key
+  User, Shield, Camera, 
+  Loader2, Key
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../app/hooks';
 import { updateProfile } from '../../features/auth/authSlice';

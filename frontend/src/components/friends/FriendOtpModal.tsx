@@ -31,7 +31,7 @@ const FriendOtpModal: React.FC<FriendOtpModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/v1/friends/generate-otp',
+        'https://chat-app-user-5koa.onrender.com/api/v1/friends/generate-otp',
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -79,7 +79,7 @@ const FriendOtpModal: React.FC<FriendOtpModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       await axios.post(
-        'http://localhost:5000/api/v1/friends/add-by-otp',
+        'https://chat-app-user-5koa.onrender.com/api/v1/friends/add-by-otp',
         { otp: code },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -38,10 +38,10 @@ const createInstance = (baseURL: string) => {
 };
 
 // User Service API (Default)
-export const userApi = createInstance('http://localhost:5000/api/v1');
+export const userApi = createInstance('https://chat-app-user-5koa.onrender.com/api/v1');
 
 // Chat Service API
-export const chatApi = createInstance('http://localhost:5002/api/v1');
+export const chatApi = createInstance('https://chat-app-chat-0yne.onrender.com/api/v1');
 
 // Export a default instance for general use (pointed to user service)
 export default userApi;
