@@ -8,7 +8,7 @@ import { useCallStore } from "../store/useCallStore";
 import { friendService } from "../services/friendService";
 import toast from "react-hot-toast";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://13.61.148.150:5000";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
