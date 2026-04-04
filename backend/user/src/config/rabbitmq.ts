@@ -6,7 +6,11 @@ dotenv.config();
 
 export const connectRabbitMQ = async () => {
   try{
-    const connection = await amqp.connect(process.env.RABBITMQ_URL as string);
+    // Build RabbitMQ URL from separate env variables or use RABBITMQ_URL directly
+    const rabbitmqUrl = process.env.RABBITMQ_URL || 
+      `amqp://${process.env.RABBITMQ_USER}:${process.env.RABBITMQ_PASSWORD}@${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`;
+    
+    const connection = await amqp.connect(rabbitmqUrl);
 
     channel = await connection.createChannel()
 
