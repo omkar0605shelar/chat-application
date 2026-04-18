@@ -3,7 +3,10 @@ import TryCatch from "../config/TryCatch.js";
 import type { AuthenticatedRequest } from "../middleware/isAuth.js";
 import { User } from "../model/User.js";
 import { FriendRequest } from "../model/FriendRequest.js";
-import { io, userSocketMap, redisClient } from "../index.js";
+import { io, userSocketMap } from "../index.js";
+
+// In-memory friend OTP storage
+const friendOtpStore = new Map<string, { userId: string; expiresAt: number }>();
 
 export const sendFriendRequest = TryCatch(async (req: AuthenticatedRequest, res) => {
     const senderId = req.user!._id;
@@ -155,8 +158,8 @@ export const generateFriendOtp = TryCatch(async (req: AuthenticatedRequest, res)
     // Generate 5-digit OTP
     const otp = Math.floor(10000 + Math.random() * 90000).toString();
     
-    // Set in Redis with 10 mins (600 seconds) expiry
-    await redisClient.setEx(`friend_otp:${otp}`, 600, userId!.toString());
+    // Store in memory with 10 minutes expiry
+    friendOtpStore.set(otp, { userId: userId!.toString(), expiresAt: Date.now() + 10 * 60 * 1000 });
     
     res.json({
         success: true,
@@ -171,11 +174,13 @@ export const addFriendByOtp = TryCatch(async (req: AuthenticatedRequest, res) =>
     
     if (!otp) return res.status(400).json({ success: false, message: "OTP is required" });
     
-    const friendId = await redisClient.get(`friend_otp:${otp}`);
+    const stored = friendOtpStore.get(otp);
     
-    if (!friendId) {
+    if (!stored || Date.now() > stored.expiresAt) {
         return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
     }
+    
+    const friendId = stored.userId;
     
     if (friendId === userId?.toString()) {
         return res.status(400).json({ success: false, message: "You cannot add yourself" });
@@ -196,7 +201,7 @@ export const addFriendByOtp = TryCatch(async (req: AuthenticatedRequest, res) =>
     await User.findByIdAndUpdate(friendId, { $addToSet: { friends: userId } });
     
     // Invalidate the OTP to prevent reuse
-    await redisClient.del(`friend_otp:${otp}`);
+    friendOtpStore.delete(otp);
     
     // Create conversation in Chat Service
     try {

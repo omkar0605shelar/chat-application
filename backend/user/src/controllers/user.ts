@@ -1,47 +1,60 @@
 import { generateToken } from "../config/generateToken.js";
-import { publishToQueue } from "../config/rabbitmq.js";
 import TryCatch from "../config/TryCatch.js";
 import cloudinary from "../config/cloudinary.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
-import { redisClient } from "../index.js";
 import type { AuthenticatedRequest } from "../middleware/isAuth.js";
 import {User} from '../model/User.js';
+import nodemailer from "nodemailer";
+
+// In-memory OTP storage
+const otpStore = new Map<string, { otp: string; expiresAt: number }>();
+const rateLimitStore = new Map<string, number>();
+
+const sendOtpEmail = async (to: string, otp: string) => {
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.USER,
+      pass: process.env.PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.USER,
+    to,
+    subject: "Your OTP code",
+    text: `Your OTP is ${otp}. It is valid for 5 minutes.`,
+  });
+};
 
 export const loginUser = TryCatch(async(req, res) => {
   const {email} = req.body;
 
-  const rateLimitKey = `otp: ratelimit;${email}`
-  const rateLimit = await redisClient.get(rateLimitKey);
+  // Rate limiting check
+  const now = Date.now();
+  const rateLimitKey = `ratelimit:${email}`;
+  const lastRequest = rateLimitStore.get(rateLimitKey);
 
-  if(rateLimit){
+  if (lastRequest && now - lastRequest < 60000) {
     res.status(420).json({
       message: "Too many requests. Please wait before requesting new otp"
-    })
+    });
     return;
   }
 
   const otp = Math.floor(Math.random()*900000 + 100000).toString();
 
-  const otpKey = `otp:${email}`
-  await redisClient.set(otpKey, otp, {
-    EX: 300,
-  })
+  // Store OTP in memory with 5 minute expiry
+  otpStore.set(email, { otp, expiresAt: now + 5 * 60 * 1000 });
+  rateLimitStore.set(rateLimitKey, now);
 
-  await redisClient.set(rateLimitKey, "true", {
-    EX:60
-  });
-
-  const message = {
-    to: email,
-    subject: 'Your Otp code.',
-    body: `Your otp is ${otp}. It is valid for 5 minutes.`
-  }
-
-  await publishToQueue("send-otp", message)
+  await sendOtpEmail(email, otp);
 
   res.status(200).json({
-    message: "OTP send to your email"
-  })
+    message: "OTP sent to your email"
+  });
 })
 
 export const verifyUser = TryCatch(async (req, res) => {
@@ -54,17 +67,15 @@ export const verifyUser = TryCatch(async (req, res) => {
     return;
   }
 
-  const otpKey = `otp:${email}`
+  const stored = otpStore.get(email);
 
-  const storedOtp = await redisClient.get(otpKey);
-
-  if(!storedOtp || String(storedOtp) !== enteredOtp){
+  if(!stored || stored.otp !== enteredOtp || Date.now() > stored.expiresAt){
     return res.status(400).json({
       message: "Invalid otp or expired otp"
     });
   }
 
-  await redisClient.del(otpKey);
+  otpStore.delete(email);
 
   let user = await User.findOne({email});
 

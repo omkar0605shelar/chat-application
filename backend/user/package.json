@@ -14,9 +14,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@types/amqplib": "^0.10.8",
     "@types/multer": "^2.1.0",
-    "amqplib": "^0.10.9",
+    "@types/nodemailer": "^6.4.23",
     "axios": "^1.13.6",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
@@ -26,7 +25,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1",
     "multer": "^2.1.1",
-    "redis": "^5.10.0",
+    "nodemailer": "^6.10.1",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
@@ -35,7 +34,6 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
-    "@types/redis": "^4.0.10",
     "@types/socket.io": "^3.0.1",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11"
