@@ -15,7 +15,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:5173", "https://nextalkchatapp.onrender.com"],
+    origin: ["http://localhost:5173", "https://nextalkchat.onrender.com"],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -24,7 +24,7 @@ const io = new Server(httpServer, {
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://nextalkchatapp.onrender.com"],
+  origin: ["http://localhost:5173", "https://nextalkchatapp.onrender.com", "https://nextalkchat.onrender.com"],
   credentials: true
 }));
 app.use(express.json());
