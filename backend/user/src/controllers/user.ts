@@ -30,31 +30,51 @@ const sendOtpEmail = async (to: string, otp: string) => {
 };
 
 export const loginUser = TryCatch(async(req, res) => {
-  const {email} = req.body;
+  try {
+    const {email} = req.body;
 
-  // Rate limiting check
-  const now = Date.now();
-  const rateLimitKey = `ratelimit:${email}`;
-  const lastRequest = rateLimitStore.get(rateLimitKey);
+    if (!email) {
+      res.status(400).json({ message: "Email is required" });
+      return;
+    }
 
-  if (lastRequest && now - lastRequest < 60000) {
-    res.status(420).json({
-      message: "Too many requests. Please wait before requesting new otp"
+    // Check env vars
+    if (!process.env.USER || !process.env.PASSWORD) {
+      console.error("Missing EMAIL credentials in env");
+      res.status(500).json({ message: "Server email configuration error" });
+      return;
+    }
+
+    // Rate limiting check
+    const now = Date.now();
+    const rateLimitKey = `ratelimit:${email}`;
+    const lastRequest = rateLimitStore.get(rateLimitKey);
+
+    if (lastRequest && now - lastRequest < 60000) {
+      res.status(420).json({
+        message: "Too many requests. Please wait before requesting new otp"
+      });
+      return;
+    }
+
+    const otp = Math.floor(Math.random()*900000 + 100000).toString();
+
+    // Store OTP in memory with 5 minute expiry
+    otpStore.set(email, { otp, expiresAt: now + 5 * 60 * 1000 });
+    rateLimitStore.set(rateLimitKey, now);
+
+    await sendOtpEmail(email, otp);
+
+    res.status(200).json({
+      message: "OTP sent to your email"
     });
-    return;
+  } catch (error: any) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      message: "Failed to send OTP",
+      error: error.message
+    });
   }
-
-  const otp = Math.floor(Math.random()*900000 + 100000).toString();
-
-  // Store OTP in memory with 5 minute expiry
-  otpStore.set(email, { otp, expiresAt: now + 5 * 60 * 1000 });
-  rateLimitStore.set(rateLimitKey, now);
-
-  await sendOtpEmail(email, otp);
-
-  res.status(200).json({
-    message: "OTP sent to your email"
-  });
 })
 
 export const verifyUser = TryCatch(async (req, res) => {
