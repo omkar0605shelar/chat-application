@@ -24,7 +24,7 @@ const io = new Server(httpServer, {
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://nextalkchatapp.onrender.com", "https://nextalkchat.onrender.com"],
+  origin: ["http://localhost:5173",  "https://nextalkchat.onrender.com"],
   credentials: true
 }));
 app.use(express.json());
@@ -35,7 +35,22 @@ app.use("/api/v1/friends", friendRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello, World!');
-})
+});
+
+// Health check - debug environment
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    env: {
+      hasUserEmail: !!process.env.USER,
+      hasEmailPassword: !!process.env.PASSWORD,
+      hasMongoUri: !!process.env.MONGO_URI,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      hasCloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY),
+    },
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Socket logic
 export const userSocketMap: { [key: string]: string } = {};
