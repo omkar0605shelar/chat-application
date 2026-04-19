@@ -1,6 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { createClient } from 'redis';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -14,36 +13,37 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: ["http://localhost:5173", `${process.env.FRONTEND_URL}`],
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 const port = process.env.PORT || 5000;
-const redisUrl = process.env.REDIS_URL;
-if (!redisUrl) {
-    throw new Error('Missing REDIS_URL in environment variables');
-}
-export const redisClient = createClient({
-    url: redisUrl,
-});
-redisClient.on('error', (err) => {
-    console.log('Redis error:', err);
-});
-redisClient.connect()
-    .then(() => {
-    console.log("Connected to redis.");
-})
-    .catch((err) => {
-    console.log("Error connecting to redis:", err);
-});
 connectRabbitMQ();
-app.use(cors());
+app.use(cors({
+    origin: ["http://localhost:5173", `${process.env.FRONTEND_URL}`],
+    credentials: true
+}));
 app.use(express.json());
 app.use("/api/v1", userRoutes);
 app.use("/api/v1", aiRoutes);
 app.use("/api/v1/friends", friendRoutes);
 app.get('/', (req, res) => {
     res.send('Hello, World!');
+});
+// Health check - debug environment
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        env: {
+            hasUserEmail: !!process.env.USER,
+            hasEmailPassword: !!process.env.PASSWORD,
+            hasMongoUri: !!process.env.MONGO_URI,
+            hasJwtSecret: !!process.env.JWT_SECRET,
+            hasCloudinary: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY),
+        },
+        timestamp: new Date().toISOString()
+    });
 });
 // Socket logic
 export const userSocketMap = {};

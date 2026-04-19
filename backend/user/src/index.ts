@@ -8,6 +8,7 @@ import { connectDb } from './config/db.js';
 import userRoutes from './routes/user.js';
 import friendRoutes from './routes/friend.js';
 import aiRoutes from './routes/ai.js';
+import { connectRabbitMQ } from './config/rabbitmq.js';
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ const io = new Server(httpServer, {
 });
 
 const port = process.env.PORT || 5000;
+
+connectRabbitMQ();
 
 app.use(cors({
   origin: ["http://localhost:5173", `${process.env.FRONTEND_URL}`],
