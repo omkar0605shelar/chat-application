@@ -38,10 +38,10 @@ const createInstance = (baseURL: string) => {
 };
 
 // User Service API (Default)
-export const userApi = createInstance('https://chat-app-user-5koa.onrender.com/api/v1');
+export const userApi = createInstance(`${import.meta.env.VITE_USER_SERVICE_URL}`);
 
 // Chat Service API
-export const chatApi = createInstance('https://chat-app-chat-0yne.onrender.com/api/v1');
+export const chatApi = createInstance(`${import.meta.env.VITE_CHAT_SERVICE_URL}`);
 
 // Export a default instance for general use (pointed to user service)
 export default userApi;
